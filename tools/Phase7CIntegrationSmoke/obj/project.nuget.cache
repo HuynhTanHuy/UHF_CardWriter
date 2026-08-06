@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "dgSpecHash": "81vfEN9SoUc=",
+  "success": true,
+  "projectFilePath": "d:\\CAREHR\\CareHR.UhfCardWriter\\tools\\Phase7CIntegrationSmoke\\Phase7CIntegrationSmoke.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.configuration\\8.0.0\\microsoft.extensions.configuration.8.0.0.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.configuration.abstractions\\8.0.0\\microsoft.extensions.configuration.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.configuration.binder\\8.0.2\\microsoft.extensions.configuration.binder.8.0.2.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.configuration.fileextensions\\8.0.1\\microsoft.extensions.configuration.fileextensions.8.0.1.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.configuration.json\\8.0.1\\microsoft.extensions.configuration.json.8.0.1.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.dependencyinjection\\8.0.1\\microsoft.extensions.dependencyinjection.8.0.1.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.dependencyinjection.abstractions\\8.0.2\\microsoft.extensions.dependencyinjection.abstractions.8.0.2.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.fileproviders.abstractions\\8.0.0\\microsoft.extensions.fileproviders.abstractions.8.0.0.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.fileproviders.physical\\8.0.0\\microsoft.extensions.fileproviders.physical.8.0.0.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.filesystemglobbing\\8.0.0\\microsoft.extensions.filesystemglobbing.8.0.0.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.options\\8.0.2\\microsoft.extensions.options.8.0.2.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.options.configurationextensions\\8.0.0\\microsoft.extensions.options.configurationextensions.8.0.0.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.primitives\\8.0.0\\microsoft.extensions.primitives.8.0.0.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.netcore.app.ref\\8.0.27\\microsoft.netcore.app.ref.8.0.27.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.windowsdesktop.app.ref\\8.0.27\\microsoft.windowsdesktop.app.ref.8.0.27.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.aspnetcore.app.ref\\8.0.27\\microsoft.aspnetcore.app.ref.8.0.27.nupkg.sha512",
+    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.netcore.app.host.win-x64\\8.0.27\\microsoft.netcore.app.host.win-x64.8.0.27.nupkg.sha512"
+  ],
+  "logs": []
+}

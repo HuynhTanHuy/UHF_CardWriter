@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <RootNamespace>CareHR.UhfCardWriter.App</RootNamespace>
+    <AssemblyName>CareHR.UhfCardWriter.App</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CareHR.UhfCardWriter.Application\CareHR.UhfCardWriter.Application.csproj" />
+    <ProjectReference Include="..\CareHR.UhfCardWriter.Infrastructure\CareHR.UhfCardWriter.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Native DLLs must sit next to the WinForms executable (from SDK API\x64). -->
+  <ItemGroup>
+    <None Include="..\CareHR.UhfCardWriter.Sdk\Native\UHFPrimeReader.dll"
+          Link="UHFPrimeReader.dll"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\CareHR.UhfCardWriter.Sdk\Native\hidapi.dll"
+          Link="hidapi.dll"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>CareHR.UhfCardWriter.Sdk</RootNamespace>
+    <AssemblyName>CareHR.UhfCardWriter.Sdk</AssemblyName>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Native binaries from: CF600+601+603+SDK\UHF Desk Reader SDK\API\x64 -->
+    <None Include="Native\UHFPrimeReader.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>UHFPrimeReader.dll</Link>
+    </None>
+    <None Include="Native\hidapi.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>hidapi.dll</Link>
+    </None>
+  </ItemGroup>
+
+</Project>
