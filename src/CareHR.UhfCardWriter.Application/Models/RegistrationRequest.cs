@@ -8,11 +8,13 @@ public sealed class RegistrationRequest
     /// <summary>Initializes a registration request.</summary>
     public RegistrationRequest(
         CardIdentity identity,
+        string hospitalId,
         string cardTypeId,
         string batchCode,
         bool isVerified)
     {
         Identity = identity ?? throw new ArgumentNullException(nameof(identity));
+        HospitalId = hospitalId ?? string.Empty;
         CardTypeId = cardTypeId ?? string.Empty;
         BatchCode = batchCode ?? string.Empty;
         IsVerified = isVerified;
@@ -21,10 +23,13 @@ public sealed class RegistrationRequest
     /// <summary>Gets the verified card identity.</summary>
     public CardIdentity Identity { get; }
 
-    /// <summary>Gets the CareHR RFID tag type id.</summary>
+    /// <summary>Gets the CareHR hospital id (<c>hospitalId</c>).</summary>
+    public string HospitalId { get; }
+
+    /// <summary>Gets the CareHR RFID card type id.</summary>
     public string CardTypeId { get; }
 
-    /// <summary>Gets the CareHR RFID tag batch code.</summary>
+    /// <summary>Gets the CareHR RFID card batch code.</summary>
     public string BatchCode { get; }
 
     /// <summary>Gets whether Application has verified the physical card (BR-004).</summary>

@@ -30,6 +30,9 @@ public sealed class CardRegistrationService
         if (!request.IsVerified)
             throw new BusinessException("Register is allowed only after successful verify (BR-004).");
 
+        if (string.IsNullOrWhiteSpace(request.HospitalId))
+            throw new ValidationException("Hospital id is required for registration.");
+
         if (string.IsNullOrWhiteSpace(request.CardTypeId))
             throw new ValidationException("Card type id is required for registration.");
 

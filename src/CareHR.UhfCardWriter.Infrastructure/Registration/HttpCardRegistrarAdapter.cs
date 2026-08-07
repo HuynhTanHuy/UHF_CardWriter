@@ -7,14 +7,16 @@ using CareHR.UhfCardWriter.Application.Models;
 namespace CareHR.UhfCardWriter.Infrastructure.Registration;
 
 /// <summary>
-/// Maps <see cref="ICardRegistrar"/> to CareHR HTTP OData CreateRfidTag (CardWritter-compatible).
+/// Maps <see cref="ICardRegistrar"/> to CareHR <c>POST /api/rfid/cards</c>
+/// (same contract as CareHR frontend create card).
 /// </summary>
 /// <remarks>No business rules — Application enforces verify-before-register. No SDK types.</remarks>
 public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
 {
+    /// <summary>CamelCase JSON matching CareHR API / browser payload.</summary>
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNamingPolicy = null,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
     private readonly CareHrCardApiOptions _options;
@@ -47,35 +49,48 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
 
         var baseUrl = (_options.BaseUrl ?? string.Empty).Trim().TrimEnd('/');
         if (string.IsNullOrWhiteSpace(baseUrl))
-            return RegistrationResult.Fail(DeviceErrorCode.RegistrationFailed, "CareHR API base URL is not configured.");
+            return RegistrationResult.Fail(DeviceErrorCode.RegistrationFailed, "Thiếu Api.BaseUrl.");
 
         var token = (_options.BearerToken ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(token))
-            return RegistrationResult.Fail(DeviceErrorCode.RegistrationFailed, "CareHR API bearer token is not configured.");
+            return RegistrationResult.Fail(DeviceErrorCode.RegistrationFailed, "Thiếu Api.BearerToken.");
+
+        var hospitalRaw = FirstNonEmpty(request.HospitalId, _options.DefaultHospitalId);
+        if (string.IsNullOrWhiteSpace(hospitalRaw))
+            return RegistrationResult.Fail(DeviceErrorCode.InvalidParameter, "Thiếu bệnh viện (hospitalId).");
+        if (!Guid.TryParse(hospitalRaw, out var hospitalId))
+            return RegistrationResult.Fail(DeviceErrorCode.InvalidParameter, "hospitalId không đúng định dạng GUID.");
 
         var typeId = (request.CardTypeId ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(typeId))
+            return RegistrationResult.Fail(DeviceErrorCode.InvalidParameter, "Thiếu loại thẻ.");
         if (!Guid.TryParse(typeId, out var typeGuid))
-            return RegistrationResult.Fail(DeviceErrorCode.InvalidParameter, "Card type id must be a GUID.");
+            return RegistrationResult.Fail(DeviceErrorCode.InvalidParameter, "Loại thẻ không đúng định dạng.");
 
         var batch = (request.BatchCode ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(batch))
-            return RegistrationResult.Fail(DeviceErrorCode.InvalidParameter, "Batch code is required.");
+            return RegistrationResult.Fail(DeviceErrorCode.InvalidParameter, "Thiếu lô thẻ.");
 
-        var epc = request.Identity.EpcHex;
-        if (string.IsNullOrWhiteSpace(epc))
-            return RegistrationResult.Fail(DeviceErrorCode.InvalidParameter, "EPC identity is empty.");
+        var cardNumber = ResolveCardNumber(request.Identity);
+        if (string.IsNullOrWhiteSpace(cardNumber))
+            return RegistrationResult.Fail(DeviceErrorCode.InvalidParameter, "Thiếu mã thẻ.");
 
-        var path = string.IsNullOrWhiteSpace(_options.CreateRfidTagPath)
-            ? "/odata/rfid/RfidTags"
-            : _options.CreateRfidTagPath.Trim();
+        var path = string.IsNullOrWhiteSpace(_options.CreateRfidCardPath)
+            ? "/api/rfid/cards"
+            : _options.CreateRfidCardPath.Trim();
         if (!path.StartsWith('/'))
             path = "/" + path;
 
-        var body = new
+        // Matches CareHR frontend:
+        // { hospitalId, rfidCardNumber, rfidCardTypeId, rfidCardBatchCode, status, isActive }
+        var body = new CreateRfidCardBody
         {
-            EPCCode = epc,
-            RfidTagTypeId = typeGuid,
-            RfidTagBatchCode = batch,
+            HospitalId = hospitalId,
+            RfidCardNumber = cardNumber,
+            RfidCardTypeId = typeGuid,
+            RfidCardBatchCode = batch,
+            Status = _options.DefaultStatus,
+            IsActive = _options.DefaultIsActive,
         };
 
         try
@@ -83,22 +98,28 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
             using var message = new HttpRequestMessage(HttpMethod.Post, baseUrl + path);
             message.Headers.TryAddWithoutValidation("Accept", "application/json, text/plain, */*");
             message.Headers.TryAddWithoutValidation("Authorization", NormalizeBearer(token));
-            message.Content = new StringContent(JsonSerializer.Serialize(body, JsonOptions), Encoding.UTF8, "application/json");
+            message.Content = new StringContent(
+                JsonSerializer.Serialize(body, JsonOptions),
+                Encoding.UTF8,
+                "application/json");
 
-            using var response = _http.Send(message);
+            using var response = _http.SendAsync(message).GetAwaiter().GetResult();
             var text = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             var detail = string.IsNullOrWhiteSpace(text) ? response.ReasonPhrase ?? string.Empty : text;
+            var statusCode = (int)response.StatusCode;
 
             if (response.IsSuccessStatusCode)
-                return RegistrationResult.Ok(string.IsNullOrWhiteSpace(detail) ? "Registered" : detail);
+                return RegistrationResult.Ok(string.IsNullOrWhiteSpace(detail) ? "Registered" : Truncate(detail, 240));
 
             return RegistrationResult.Fail(
                 DeviceErrorCode.RegistrationFailed,
-                $"HTTP {(int)response.StatusCode}: {detail}");
+                ToUserFacingHttpError(statusCode, detail));
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException)
+        catch (Exception ex)
         {
-            return RegistrationResult.Fail(DeviceErrorCode.RegistrationFailed, ex.Message);
+            return RegistrationResult.Fail(
+                DeviceErrorCode.RegistrationFailed,
+                ToUserFacingException(ex));
         }
     }
 
@@ -109,10 +130,93 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
             _http.Dispose();
     }
 
+    private static string ToUserFacingHttpError(int statusCode, string body)
+    {
+        if (!string.IsNullOrEmpty(body)
+            && body.Contains("đã tồn tại", StringComparison.OrdinalIgnoreCase))
+            return "Card number already exists in this hospital.";
+
+        return statusCode switch
+        {
+            401 => "API authentication failed. Update Api.BearerToken.",
+            403 => "Not authorized to create RFID cards.",
+            404 => "API endpoint not found. Check Api.BaseUrl / CreateRfidCardPath.",
+            409 => "Conflict while registering the card.",
+            >= 500 => "CareHR server error. Retry later or contact IT.",
+            _ => $"Registration failed (HTTP {statusCode}).",
+        };
+    }
+
+    private static string ToUserFacingException(Exception ex) =>
+        ex switch
+        {
+            HttpRequestException => "Cannot reach the CareHR API. Check network and Api.BaseUrl.",
+            TaskCanceledException => "API request timed out.",
+            _ => "Registration failed due to a network or client error.",
+        };
+
+    private static string Truncate(string text, int max)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= max)
+            return text;
+        return text[..(max - 3)] + "...";
+    }
+
+    /// <summary>
+    /// CareHR stores human-readable <c>rfidCardNumber</c>.
+    /// When EPC bytes are printable ASCII, decode them; otherwise send uppercase hex.
+    /// </summary>
+    private static string ResolveCardNumber(CardIdentity identity)
+    {
+        var bytes = identity.Epc;
+        if (bytes.Length == 0)
+            return string.Empty;
+
+        var allPrintableAscii = true;
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            var b = bytes[i];
+            if (b < 0x20 || b > 0x7E)
+            {
+                allPrintableAscii = false;
+                break;
+            }
+        }
+
+        if (allPrintableAscii)
+            return Encoding.ASCII.GetString(bytes).Trim();
+
+        return (identity.EpcHex ?? string.Empty).Trim();
+    }
+
+    private static string FirstNonEmpty(string? a, string? b)
+    {
+        if (!string.IsNullOrWhiteSpace(a))
+            return a.Trim();
+        if (!string.IsNullOrWhiteSpace(b))
+            return b.Trim();
+        return string.Empty;
+    }
+
     private static string NormalizeBearer(string token)
     {
         if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
             return token;
         return "Bearer " + token;
+    }
+
+    /// <summary>
+    /// Wire DTO for <c>POST /api/rfid/cards</c>.
+    /// Property names serialize to camelCase via <see cref="JsonOptions"/>.
+    /// Explicit names avoid <c>RFID…</c> → <c>rFID…</c> camelCase quirks.
+    /// </summary>
+    private sealed class CreateRfidCardBody
+    {
+        public Guid HospitalId { get; set; }
+        public string RfidCardNumber { get; set; } = string.Empty;
+        public Guid RfidCardTypeId { get; set; }
+        public string RfidCardBatchCode { get; set; } = string.Empty;
+        public int Status { get; set; }
+        public bool IsActive { get; set; }
     }
 }

@@ -1,13 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "l3EsyO1NbY4=",
+  "dgSpecHash": "Nf+0i+9S+Zc=",
   "success": true,
-  "projectFilePath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj",
+  "projectFilePath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.extensions.dependencyinjection.abstractions\\8.0.2\\microsoft.extensions.dependencyinjection.abstractions.8.0.2.nupkg.sha512",
-    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.netcore.app.ref\\8.0.27\\microsoft.netcore.app.ref.8.0.27.nupkg.sha512",
-    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.windowsdesktop.app.ref\\8.0.27\\microsoft.windowsdesktop.app.ref.8.0.27.nupkg.sha512",
-    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget\\microsoft.aspnetcore.app.ref\\8.0.27\\microsoft.aspnetcore.app.ref.8.0.27.nupkg.sha512"
+    "C:\\Users\\YangTV\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.2\\microsoft.extensions.dependencyinjection.abstractions.8.0.2.nupkg.sha512",
+    "C:\\Users\\YangTV\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.25\\microsoft.netcore.app.ref.8.0.25.nupkg.sha512",
+    "C:\\Users\\YangTV\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.25\\microsoft.windowsdesktop.app.ref.8.0.25.nupkg.sha512",
+    "C:\\Users\\YangTV\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.25\\microsoft.aspnetcore.app.ref.8.0.25.nupkg.sha512"
   ],
   "logs": []
 }

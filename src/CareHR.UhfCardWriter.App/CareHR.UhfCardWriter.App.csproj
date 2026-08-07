@@ -6,6 +6,9 @@
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>CareHR.UhfCardWriter.App</RootNamespace>
     <AssemblyName>CareHR.UhfCardWriter.App</AssemblyName>
+    <Version>1.0.0</Version>
+    <InformationalVersion>1.0.0+phase9</InformationalVersion>
+    <Product>CareHR UHF Card Writer</Product>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +26,12 @@
 
   <ItemGroup>
     <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.Local.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.Local.json.example">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

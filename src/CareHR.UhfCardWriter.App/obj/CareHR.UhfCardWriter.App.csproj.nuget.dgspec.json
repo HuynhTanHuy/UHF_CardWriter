@@ -1,25 +1,30 @@
 {
   "format": 1,
   "restore": {
-    "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.App\\CareHR.UhfCardWriter.App.csproj": {}
+    "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.App\\CareHR.UhfCardWriter.App.csproj": {}
   },
   "projects": {
-    "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
+    "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj",
+        "projectUniqueName": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj",
         "projectName": "CareHR.UhfCardWriter.Application",
-        "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj",
-        "packagesPath": "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget",
-        "outputPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Application\\obj\\",
+        "projectPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj",
+        "packagesPath": "C:\\Users\\YangTV\\.nuget\\packages\\",
+        "outputPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
         "configFilePaths": [
-          "C:\\Users\\tekme\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\YangTV\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -63,15 +68,15 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             },
             {
               "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             },
             {
               "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             }
           ],
           "frameworkReferences": {
@@ -79,37 +84,42 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.App\\CareHR.UhfCardWriter.App.csproj": {
+    "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.App\\CareHR.UhfCardWriter.App.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.App\\CareHR.UhfCardWriter.App.csproj",
+        "projectUniqueName": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.App\\CareHR.UhfCardWriter.App.csproj",
         "projectName": "CareHR.UhfCardWriter.App",
-        "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.App\\CareHR.UhfCardWriter.App.csproj",
-        "packagesPath": "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget",
-        "outputPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.App\\obj\\",
+        "projectPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.App\\CareHR.UhfCardWriter.App.csproj",
+        "packagesPath": "C:\\Users\\YangTV\\.nuget\\packages\\",
+        "outputPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.App\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
         "configFilePaths": [
-          "C:\\Users\\tekme\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\YangTV\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net8.0-windows"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0-windows7.0": {
             "targetAlias": "net8.0-windows",
             "projectReferences": {
-              "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
-                "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj"
+              "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
+                "projectPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj"
               },
-              "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj": {
-                "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj"
+              "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj": {
+                "projectPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj"
               }
             }
           }
@@ -165,19 +175,19 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             },
             {
               "name": "Microsoft.NETCore.App.Host.win-x64",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             },
             {
               "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             },
             {
               "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             }
           ],
           "frameworkReferences": {
@@ -188,7 +198,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       },
       "runtimes": {
@@ -197,33 +207,38 @@
         }
       }
     },
-    "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj": {
+    "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj",
+        "projectUniqueName": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj",
         "projectName": "CareHR.UhfCardWriter.Infrastructure",
-        "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj",
-        "packagesPath": "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget",
-        "outputPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\obj\\",
+        "projectPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj",
+        "packagesPath": "C:\\Users\\YangTV\\.nuget\\packages\\",
+        "outputPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
         "configFilePaths": [
-          "C:\\Users\\tekme\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\YangTV\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
-                "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj"
+              "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
+                "projectPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj"
               },
-              "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj": {
-                "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj"
+              "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj": {
+                "projectPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj"
               }
             }
           }
@@ -263,15 +278,15 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             },
             {
               "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             },
             {
               "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             }
           ],
           "frameworkReferences": {
@@ -279,26 +294,31 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj": {
+    "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj",
+        "projectUniqueName": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj",
         "projectName": "CareHR.UhfCardWriter.Sdk",
-        "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj",
-        "packagesPath": "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget",
-        "outputPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\obj\\",
+        "projectPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj",
+        "packagesPath": "C:\\Users\\YangTV\\.nuget\\packages\\",
+        "outputPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Sdk\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+        ],
         "configFilePaths": [
-          "C:\\Users\\tekme\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\YangTV\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -336,15 +356,15 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.AspNetCore.App.Ref",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             },
             {
               "name": "Microsoft.NETCore.App.Ref",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             },
             {
               "name": "Microsoft.WindowsDesktop.App.Ref",
-              "version": "[8.0.27, 8.0.27]"
+              "version": "[8.0.25, 8.0.25]"
             }
           ],
           "frameworkReferences": {
@@ -352,7 +372,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

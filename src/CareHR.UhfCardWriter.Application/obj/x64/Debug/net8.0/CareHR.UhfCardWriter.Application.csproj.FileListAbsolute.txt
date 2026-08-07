@@ -10,3 +10,16 @@ D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debu
 D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.pdb
 D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\ref\CareHR.UhfCardWriter.Application.dll
 d:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.csproj.AssemblyReference.cache
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\bin\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.deps.json
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\bin\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.dll
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\bin\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.pdb
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.csproj.AssemblyReference.cache
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.GeneratedMSBuildEditorConfig.editorconfig
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.AssemblyInfoInputs.cache
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.AssemblyInfo.cs
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.csproj.CoreCompileInputs.cache
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.sourcelink.json
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.dll
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\refint\CareHR.UhfCardWriter.Application.dll
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\CareHR.UhfCardWriter.Application.pdb
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.Application\obj\x64\Debug\net8.0\ref\CareHR.UhfCardWriter.Application.dll

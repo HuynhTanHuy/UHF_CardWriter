@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using CareHR.UhfCardWriter.App.Configuration;
 using CareHR.UhfCardWriter.App.Controls;
+using CareHR.UhfCardWriter.App.Diagnostics;
 using CareHR.UhfCardWriter.App.Presentation;
 using CareHR.UhfCardWriter.Application.Devices;
 using CareHR.UhfCardWriter.Application.Models;
@@ -17,6 +19,7 @@ public sealed partial class MainForm : Form
     private readonly CardScanningService _scanningService;
     private readonly CardWriteOrchestrator _orchestrator;
     private readonly AppSettings _settings;
+    private readonly Dictionary<string, string> _timings = new(StringComparer.OrdinalIgnoreCase);
 
     private CancellationTokenSource? _operationCts;
     private bool _busy;
@@ -47,6 +50,9 @@ public sealed partial class MainForm : Form
 
     private void MainForm_Load(object? sender, EventArgs e)
     {
+        if (Tag is long startupMs)
+            RecordTiming("StartupMs", startupMs);
+
         cboHospital.DataSource = _settings.Hospitals.ToList();
         cboCardType.DataSource = _settings.CardTypes.ToList();
         txtBatch.Text = _settings.Card.DefaultBatchCode;
@@ -58,7 +64,30 @@ public sealed partial class MainForm : Form
         RefreshTargetEpcPreview();
         RefreshReaders();
         SetUiState(UiState.Disconnected, "Connect a desk reader to begin.");
-        operationLog.Append("App", "CareHR UHF Card Writer ready.");
+        LogOp("App", "CareHR UHF Card Writer ready.");
+
+        ShowStartupFindings();
+    }
+
+    private void ShowStartupFindings()
+    {
+        var findings = ConfigurationValidator.Validate(_settings).ToList();
+        if (!DiagnosticsInfo.NativeDllPresent)
+            findings.Add(new ConfigurationValidator.Finding("NAT-DLL", "Error", "UHFPrimeReader.dll is missing next to the application."));
+
+        foreach (var f in findings)
+            LogOp("Config", $"[{f.Severity}] {f.Message}");
+
+        var errors = findings.Where(f => f.Severity == "Error").ToList();
+        var warnings = findings.Where(f => f.Severity == "Warning").ToList();
+        if (errors.Count == 0 && warnings.Count == 0)
+            return;
+
+        var lines = errors.Concat(warnings).Take(8).Select(f => "• " + f.Message);
+        var text = "Startup checks:\n\n" + string.Join("\n", lines)
+                   + "\n\nOpen Settings for About / Health / Export diagnostics.";
+        MessageBox.Show(this, text, "Startup validation", MessageBoxButtons.OK,
+            errors.Count > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
     }
 
     private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
@@ -69,10 +98,12 @@ public sealed partial class MainForm : Form
             if (_connectionService.IsConnected)
                 _ = _connectionService.Disconnect();
         }
-        catch
+        catch (Exception ex)
         {
-            // Best-effort close
+            AppLog.Warn("Shutdown", AppLog.SanitizeException(ex));
         }
+
+        AppLog.Info("Shutdown", "Main form closing.");
     }
 
     private void MainForm_KeyDown(object? sender, KeyEventArgs e)
@@ -114,10 +145,15 @@ public sealed partial class MainForm : Form
         if (_connectionService.IsConnected)
         {
             SetBusy(true);
+            var sw = Stopwatch.StartNew();
             try
             {
                 var close = await Task.Run(() => _connectionService.Disconnect()).ConfigureAwait(true);
-                operationLog.Append("Disconnect", close.Success ? close.Message : $"{close.ErrorCode}: {close.Message}");
+                sw.Stop();
+                RecordTiming("DisconnectMs", sw.ElapsedMilliseconds);
+                LogOp("Disconnect",
+                    close.Success ? close.Message : UserMessage.ForDeviceOrOperation($"{close.ErrorCode}: {close.Message}"),
+                    sw.ElapsedMilliseconds);
                 SetUiState(UiState.Disconnected, "Reader disconnected.");
                 btnConnect.Text = "Connect (F5)";
             }
@@ -137,24 +173,31 @@ public sealed partial class MainForm : Form
 
         SetBusy(true);
         SetUiState(UiState.Busy, "Connecting…");
+        var connectSw = Stopwatch.StartNew();
         try
         {
             var result = await Task.Run(() => _connectionService.Connect(endpoint!)).ConfigureAwait(true);
+            connectSw.Stop();
+            RecordTiming("ConnectMs", connectSw.ElapsedMilliseconds);
             if (!result.Success)
             {
-                operationLog.Append("Connect", $"{result.ErrorCode}: {result.Message}");
-                SetUiState(UiState.Error, result.Message);
+                var msg = UserMessage.ForDeviceOrOperation($"{result.ErrorCode}: {result.Message}");
+                LogOp("Connect", msg, connectSw.ElapsedMilliseconds);
+                SetUiState(UiState.Error, msg);
                 return;
             }
 
-            operationLog.Append("Connect", "Connected.");
+            LogOp("Connect", "Connected.", connectSw.ElapsedMilliseconds);
             btnConnect.Text = "Disconnect";
             SetUiState(UiState.Connected, "Reader connected. Scan or write a card.");
         }
         catch (Exception ex)
         {
-            operationLog.Append("Connect", ex.Message);
-            SetUiState(UiState.Error, ex.Message);
+            connectSw.Stop();
+            var msg = UserMessage.ForException(ex);
+            AppLog.Error("Presentation", "Connect failed", ex);
+            LogOp("Connect", msg, connectSw.ElapsedMilliseconds);
+            SetUiState(UiState.Error, msg);
         }
         finally
         {
@@ -176,6 +219,7 @@ public sealed partial class MainForm : Form
         _operationCts = new CancellationTokenSource();
         SetBusy(true);
         SetUiState(UiState.Scanning, "Scanning for a single card…");
+        var sw = Stopwatch.StartNew();
         try
         {
             var timeout = _settings.Reader.ScanTimeoutMs;
@@ -183,36 +227,43 @@ public sealed partial class MainForm : Form
                     () => _scanningService.ScanForSingleCard(timeout, _operationCts.Token),
                     _operationCts.Token)
                 .ConfigureAwait(true);
+            sw.Stop();
+            RecordTiming("ScanMs", sw.ElapsedMilliseconds);
 
             if (scan.Outcome == ScanOutcome.Cancelled)
             {
-                operationLog.Append("Scan", "Cancelled.");
+                LogOp("Scan", "Cancelled.", sw.ElapsedMilliseconds);
                 SetUiState(UiState.Connected, "Scan cancelled.");
                 return;
             }
 
             if (!scan.Success || scan.Card is null)
             {
-                operationLog.Append("Scan", $"{scan.ErrorCode}: {scan.Message}");
-                SetUiState(UiState.Error, scan.Message);
+                var msg = UserMessage.ForDeviceOrOperation($"{scan.ErrorCode}: {scan.Message}");
+                LogOp("Scan", msg, sw.ElapsedMilliseconds);
+                SetUiState(UiState.Error, msg);
                 return;
             }
 
             var epc = scan.Card.Identity.EpcHex;
             txtCurrentEpc.Text = epc;
             lblResultCurrentEpc.Text = epc;
-            operationLog.Append("Scan", $"Card found: {epc}");
+            LogOp("Scan", $"Card found: {epc}", sw.ElapsedMilliseconds);
             SetUiState(UiState.Connected, $"Card detected: {epc}");
         }
         catch (OperationCanceledException)
         {
-            operationLog.Append("Scan", "Cancelled.");
+            sw.Stop();
+            LogOp("Scan", "Cancelled.", sw.ElapsedMilliseconds);
             SetUiState(UiState.Connected, "Scan cancelled.");
         }
         catch (Exception ex)
         {
-            operationLog.Append("Scan", ex.Message);
-            SetUiState(UiState.Error, ex.Message);
+            sw.Stop();
+            var msg = UserMessage.ForException(ex);
+            AppLog.Error("Presentation", "Scan failed", ex);
+            LogOp("Scan", msg, sw.ElapsedMilliseconds);
+            SetUiState(UiState.Error, msg);
         }
         finally
         {
@@ -231,7 +282,7 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        if (!TryValidateWriteInputs(out var intendedBytes, out var cardTypeId, out var batch, out var error))
+        if (!TryValidateWriteInputs(out var intendedBytes, out var hospitalId, out var cardTypeId, out var batch, out var error))
         {
             MessageBox.Show(this, error, "Write", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
@@ -246,6 +297,7 @@ public sealed partial class MainForm : Form
         var request = new CardWriteJobRequest(
             new CardIdentity(intendedBytes!),
             password,
+            hospitalId!,
             cardTypeId!,
             batch!,
             _settings.Reader.ScanTimeoutMs);
@@ -255,25 +307,33 @@ public sealed partial class MainForm : Form
         lblResultCardType.Text = (cboCardType.SelectedItem as CardTypeOption)?.Name ?? "—";
         lblResultSerial.Text = txtCurrent.Text.Trim();
 
+        var sw = Stopwatch.StartNew();
         try
         {
-            operationLog.Append("Write", "Job started (scan → write → verify → register).");
+            LogOp("Write", "Job started (scan → write → verify → register).");
             var result = await Task.Run(
                     () => _orchestrator.RunWriteCardJob(request, _operationCts.Token),
                     _operationCts.Token)
                 .ConfigureAwait(true);
-
-            ApplyJobResult(result);
+            sw.Stop();
+            RecordTiming("WriteJobMs", sw.ElapsedMilliseconds);
+            if (result.RegistrationResult is not null)
+                RecordTiming("RegisterOutcome", result.RegistrationResult.Success ? "OK" : "FAIL");
+            ApplyJobResult(result, sw.ElapsedMilliseconds);
         }
         catch (OperationCanceledException)
         {
-            operationLog.Append("Write", "Cancelled.");
+            sw.Stop();
+            LogOp("Cancel", "Write cancelled.", sw.ElapsedMilliseconds);
             SetUiState(UiState.Connected, "Write cancelled.");
         }
         catch (Exception ex)
         {
-            operationLog.Append("Write", ex.Message);
-            SetUiState(UiState.Error, ex.Message);
+            sw.Stop();
+            var msg = UserMessage.ForException(ex);
+            AppLog.Error("Presentation", "Write job failed", ex);
+            LogOp("Error", msg, sw.ElapsedMilliseconds);
+            SetUiState(UiState.Error, msg);
         }
         finally
         {
@@ -287,11 +347,11 @@ public sealed partial class MainForm : Form
         try
         {
             var cancel = _orchestrator.CancelOperation();
-            operationLog.Append("Cancel", cancel.Message);
+            LogOp("Cancel", UserMessage.ForDeviceOrOperation(cancel.Message));
         }
         catch (Exception ex)
         {
-            operationLog.Append("Cancel", ex.Message);
+            LogOp("Cancel", UserMessage.ForException(ex));
         }
     }
 
@@ -300,21 +360,21 @@ public sealed partial class MainForm : Form
         if (_busy)
             return;
         RefreshReaders();
-        operationLog.Append("Refresh", "Reader list reloaded.");
+        LogOp("Refresh", "Reader list reloaded.");
     }
 
     private void BtnSettings_Click(object? sender, EventArgs e)
     {
-        var message =
-            $"API: {_settings.Api.BaseUrl}\n" +
-            $"Reader mode: {_settings.Reader.DefaultMode}\n" +
-            $"COM: {_settings.Reader.ComPort} @ {_settings.Reader.BaudRate}\n" +
-            $"EPC encoding: {_settings.Card.EpcEncoding}\n\n" +
-            "Edit appsettings.json next to the executable to change settings.";
-        MessageBox.Show(this, message, "Settings", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        using var dlg = new SupportForm(
+            _settings,
+            _connectionService,
+            () => cboReader.Text,
+            () => operationLog.GetLines(),
+            _timings);
+        dlg.ShowDialog(this);
     }
 
-    private void ApplyJobResult(CardWriteJobResult result)
+    private void ApplyJobResult(CardWriteJobResult result, long durationMs)
     {
         if (result.ScannedCard is not null)
         {
@@ -324,7 +384,9 @@ public sealed partial class MainForm : Form
 
         if (result.Success)
         {
-            operationLog.Append("Write", result.Message);
+            LogOp("Write", UserMessage.ForDeviceOrOperation(result.Message), durationMs);
+            LogOp("Verify", "OK");
+            LogOp("Register", "OK");
             SetUiState(UiState.Completed, result.Message);
             if (UiInputHelper.TryParsePositiveInt(txtCurrent.Text, out var current) &&
                 UiInputHelper.TryParsePositiveInt(txtEnd.Text, out var end) &&
@@ -339,21 +401,23 @@ public sealed partial class MainForm : Form
 
         if (result.Stage == CardWriteJobStage.WrittenButUnregistered)
         {
-            operationLog.Append("Register", result.Message);
-            SetUiState(UiState.Error, "Card written & verified, but registry failed. Retry register from backend policy.");
+            var regMsg = UserMessage.ForDeviceOrOperation(result.Message);
+            LogOp("Verify", "OK", durationMs);
+            LogOp("Register", regMsg);
+            SetUiState(UiState.Error, "Card written & verified, but registry failed. See Register log / Support.");
             workflowProgress.SetActiveStep(4);
             return;
         }
 
         if (result.Stage == CardWriteJobStage.Cancelled)
         {
-            operationLog.Append("Write", "Cancelled.");
+            LogOp("Cancel", "Cancelled.", durationMs);
             SetUiState(UiState.Connected, "Cancelled.");
             return;
         }
 
-        operationLog.Append("Write", $"{result.Stage}: {result.ErrorCode} — {result.Message}");
-        // Reflect Application stage (not fabricated mid-flight progress).
+        var fail = UserMessage.ForDeviceOrOperation($"{result.Stage}: {result.ErrorCode} — {result.Message}");
+        LogOp("Error", fail, durationMs);
         workflowProgress.SetActiveStep(result.Stage switch
         {
             CardWriteJobStage.Scanning => 1,
@@ -363,8 +427,19 @@ public sealed partial class MainForm : Form
             CardWriteJobStage.Registering => 4,
             _ => 2,
         });
-        SetUiState(UiState.Error, result.Message);
+        SetUiState(UiState.Error, UserMessage.ForDeviceOrOperation(result.Message));
     }
+
+    private void LogOp(string action, string result, long? durationMs = null)
+    {
+        operationLog.Append(action, result, durationMs);
+        AppLog.Operation(action, result, durationMs);
+    }
+
+    private void RecordTiming(string key, long ms) => _timings[key] = ms + " ms";
+
+    private void RecordTiming(string key, string value) => _timings[key] = value;
+
 
     private void RefreshReaders()
     {
@@ -385,7 +460,7 @@ public sealed partial class MainForm : Form
         }
         else if (!usb.Success)
         {
-            operationLog.Append("Refresh", $"USB list: {usb.ErrorCode} {usb.Message}");
+            LogOp("Refresh", UserMessage.ForDeviceOrOperation($"USB list: {usb.ErrorCode} {usb.Message}"));
         }
 
         cboReader.DataSource = null;
@@ -443,12 +518,24 @@ public sealed partial class MainForm : Form
         return true;
     }
 
-    private bool TryValidateWriteInputs(out byte[]? epc, out string? cardTypeId, out string? batch, out string error)
+    private bool TryValidateWriteInputs(
+        out byte[]? epc,
+        out string? hospitalId,
+        out string? cardTypeId,
+        out string? batch,
+        out string error)
     {
         epc = null;
+        hospitalId = null;
         cardTypeId = null;
         batch = null;
         error = string.Empty;
+
+        if (cboHospital.SelectedItem is not HospitalOption hospital || string.IsNullOrWhiteSpace(hospital.Id))
+        {
+            error = "Hospital is required.";
+            return false;
+        }
 
         if (cboCardType.SelectedItem is not CardTypeOption type || string.IsNullOrWhiteSpace(type.Id))
         {
@@ -481,6 +568,7 @@ public sealed partial class MainForm : Form
         }
 
         epc = bytes;
+        hospitalId = hospital.Id;
         cardTypeId = type.Id;
         return true;
     }

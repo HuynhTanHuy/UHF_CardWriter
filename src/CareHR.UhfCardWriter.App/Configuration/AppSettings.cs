@@ -15,7 +15,11 @@ public sealed class ApiSettings
 {
     public string BaseUrl { get; set; } = string.Empty;
     public string BearerToken { get; set; } = string.Empty;
-    public string CreateRfidTagPath { get; set; } = "/odata/rfid/RfidTags";
+    /// <summary>CareHR create card path (<c>POST /api/rfid/cards</c>).</summary>
+    public string CreateRfidCardPath { get; set; } = "/api/rfid/cards";
+    /// <summary>Default <c>status</c> on create (Stock = 4).</summary>
+    public int DefaultStatus { get; set; } = 4;
+    public bool DefaultIsActive { get; set; } = true;
 }
 
 public sealed class ReaderSettings

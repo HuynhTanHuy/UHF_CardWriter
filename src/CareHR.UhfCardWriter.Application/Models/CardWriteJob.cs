@@ -24,12 +24,14 @@ public sealed class CardWriteJobRequest
     public CardWriteJobRequest(
         CardIdentity intendedIdentity,
         byte[] accessPassword,
+        string hospitalId,
         string cardTypeId,
         string batchCode,
         ushort scanTimeoutMs = DeviceConstants.DefaultScanTimeoutMs)
     {
         IntendedIdentity = intendedIdentity ?? throw new ArgumentNullException(nameof(intendedIdentity));
         AccessPassword = accessPassword ?? throw new ArgumentNullException(nameof(accessPassword));
+        HospitalId = hospitalId ?? string.Empty;
         CardTypeId = cardTypeId ?? string.Empty;
         BatchCode = batchCode ?? string.Empty;
         ScanTimeoutMs = scanTimeoutMs;
@@ -40,6 +42,9 @@ public sealed class CardWriteJobRequest
 
     /// <summary>Gets the access password.</summary>
     public byte[] AccessPassword { get; }
+
+    /// <summary>Gets the CareHR hospital id for registry.</summary>
+    public string HospitalId { get; }
 
     /// <summary>Gets the CareHR card type id for registry.</summary>
     public string CardTypeId { get; }

@@ -94,6 +94,7 @@ static int RunWorkflowSmoke()
     var result = orch.RunWriteCardJob(new CardWriteJobRequest(
         new CardIdentity(intended),
         password,
+        hospitalId: Guid.NewGuid().ToString(),
         cardTypeId: Guid.NewGuid().ToString(),
         batchCode: "BATCH-6D",
         scanTimeoutMs: 200));

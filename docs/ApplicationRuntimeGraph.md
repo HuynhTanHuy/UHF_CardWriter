@@ -53,7 +53,7 @@ UI (Phase 7) / CompositionRoot
 | `ICardWriter` | `CardWriterAdapter` | `Writer.Write` (EPC) |
 | `ICardReader` | `CardReaderAdapter` | `Reader.Read` (EPC) |
 | `ICardSecurity` | `CardSecurityAdapter` | `TagControl.Lock/Kill` |
-| `ICardRegistrar` | `HttpCardRegistrarAdapter` | CareHR `POST /odata/rfid/RfidTags` |
+| `ICardRegistrar` | `HttpCardRegistrarAdapter` | CareHR `POST /api/rfid/cards` |
 
 ---
 

@@ -166,35 +166,41 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget": {}
+    "C:\\Users\\YangTV\\.nuget\\packages\\": {},
+    "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "d:\\CAREHR\\CareHR.UhfCardWriter\\tools\\Phase6DSmoke\\Phase6DSmoke.csproj",
+      "projectUniqueName": "e:\\CareHR\\UHF_CardWriter\\tools\\Phase6DSmoke\\Phase6DSmoke.csproj",
       "projectName": "Phase6DSmoke",
-      "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\tools\\Phase6DSmoke\\Phase6DSmoke.csproj",
-      "packagesPath": "C:\\Users\\tekme\\AppData\\Local\\Temp\\cursor-sandbox-cache\\7e4a894591732e9f8ce4aa1d04ced8e2\\nuget",
-      "outputPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\tools\\Phase6DSmoke\\obj\\",
+      "projectPath": "e:\\CareHR\\UHF_CardWriter\\tools\\Phase6DSmoke\\Phase6DSmoke.csproj",
+      "packagesPath": "C:\\Users\\YangTV\\.nuget\\packages\\",
+      "outputPath": "e:\\CareHR\\UHF_CardWriter\\tools\\Phase6DSmoke\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
+      ],
       "configFilePaths": [
-        "C:\\Users\\tekme\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\YangTV\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
-              "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj"
+            "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
+              "projectPath": "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj"
             },
-            "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj": {
-              "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj"
+            "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj": {
+              "projectPath": "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj"
             }
           }
         }
@@ -234,19 +240,19 @@
         "downloadDependencies": [
           {
             "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[8.0.27, 8.0.27]"
+            "version": "[8.0.25, 8.0.25]"
           },
           {
             "name": "Microsoft.NETCore.App.Host.win-x64",
-            "version": "[8.0.27, 8.0.27]"
+            "version": "[8.0.25, 8.0.25]"
           },
           {
             "name": "Microsoft.NETCore.App.Ref",
-            "version": "[8.0.27, 8.0.27]"
+            "version": "[8.0.25, 8.0.25]"
           },
           {
             "name": "Microsoft.WindowsDesktop.App.Ref",
-            "version": "[8.0.27, 8.0.27]"
+            "version": "[8.0.25, 8.0.25]"
           }
         ],
         "frameworkReferences": {
@@ -254,7 +260,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.204/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

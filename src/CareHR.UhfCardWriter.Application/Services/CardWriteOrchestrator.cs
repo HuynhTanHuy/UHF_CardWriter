@@ -52,12 +52,14 @@ public sealed class CardWriteOrchestrator
                 "Reader must be connected before write job (BR-001).");
         }
 
-        if (string.IsNullOrWhiteSpace(request.CardTypeId) || string.IsNullOrWhiteSpace(request.BatchCode))
+        if (string.IsNullOrWhiteSpace(request.HospitalId) ||
+            string.IsNullOrWhiteSpace(request.CardTypeId) ||
+            string.IsNullOrWhiteSpace(request.BatchCode))
         {
             return CardWriteJobResult.Fail(
                 CardWriteJobStage.Failed,
                 DeviceErrorCode.InvalidParameter,
-                "Card type id and batch code are required.");
+                "Hospital id, card type id and batch code are required.");
         }
 
         // --- Scan (UC-004) ---
@@ -141,6 +143,7 @@ public sealed class CardWriteOrchestrator
         var registration = _registrationService.Register(
             new RegistrationRequest(
                 request.IntendedIdentity,
+                request.HospitalId,
                 request.CardTypeId,
                 request.BatchCode,
                 isVerified: true));

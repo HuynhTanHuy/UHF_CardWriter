@@ -28,7 +28,7 @@ Driver → Native → UHFPrimeReader.dll
 | `ICardWriter` | `CardWriterAdapter` | `Writer.Write` (EPC bank, wordPtr=2) |
 | `ICardReader` | `CardReaderAdapter` | `Reader.Read` (EPC bank, wordPtr=2) |
 | `ICardSecurity` | `CardSecurityAdapter` | `TagControl.Lock` / `Kill` |
-| `ICardRegistrar` | `HttpCardRegistrarAdapter` | `POST {BaseUrl}/odata/rfid/RfidTags` |
+| `ICardRegistrar` | `HttpCardRegistrarAdapter` | `POST {BaseUrl}/api/rfid/cards` |
 
 ---
 
