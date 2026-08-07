@@ -317,8 +317,9 @@ public sealed partial class MainForm : Form
                 }
 
                 lblFactoryEpc.Text = "—";
-                lblTargetCard.Text = cardNumber!;
-                SetUiState(UiState.WaitingForCard, $"Place card for {cardNumber}.");
+                var cardDisplay = FormatCardDisplay(cardNumber!);
+                lblTargetCard.Text = cardDisplay;
+                SetUiState(UiState.WaitingForCard, $"Place card for {cardDisplay}.");
                 RefreshBatchCounters();
 
                 // Scan first so operator sees Factory Card before write.
@@ -346,7 +347,7 @@ public sealed partial class MainForm : Form
 
                 if (!scan.Success || scan.Card is null)
                 {
-                    SetUiState(UiState.WaitingForCard, $"Place card for {cardNumber}.");
+                    SetUiState(UiState.WaitingForCard, $"Place card for {cardDisplay}.");
                     continue;
                 }
 
@@ -367,7 +368,7 @@ public sealed partial class MainForm : Form
                     batchCode!,
                     _settings.Reader.ScanTimeoutMs);
 
-                SetUiState(UiState.Writing, $"Writing {cardNumber}…");
+                SetUiState(UiState.Writing, $"Writing {cardDisplay}…");
                 LogOp("Write", "Writing.");
 
                 CardWriteJobResult result;
@@ -400,8 +401,8 @@ public sealed partial class MainForm : Form
 
                     LogOp("Verify", "Verify OK.");
                     LogOp("Register", "Register OK.");
-                    LogOp("Done", $"Completed {cardNumber}.");
-                    SetUiState(UiState.Success, $"{cardNumber} written & registered.");
+                    LogOp("Done", $"Completed {cardDisplay}.");
+                    SetUiState(UiState.Success, $"{cardDisplay} written & registered.");
                     PlaySuccessBeep();
 
                     current++;
@@ -554,10 +555,16 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        lblTargetCard.Text = cardNumber!;
+        lblTargetCard.Text = FormatCardDisplay(cardNumber!);
         if (_debugMode && identity is not null)
             txtTargetEpc.Text = Convert.ToHexString(identity.Epc);
     }
+
+    private string FormatCardDisplay(string cardNumber) =>
+        UiCardNumberFormat.ForDisplay(
+            cardNumber,
+            _settings.Card.BatchNumberWidth,
+            _settings.Card.SerialNumberWidth);
 
     private bool TryValidateBatchInputs(
         out string? hospitalId,

@@ -42,12 +42,36 @@ internal sealed class SupportForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        Width = 640;
-        Height = 520;
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96f, 96f);
+        ClientSize = new Size(640, 560);
+        MinimumSize = new Size(640, 520);
+        Font = new Font("Segoe UI", 9f);
+        Padding = new Padding(0);
+
+        var root = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Padding = new Padding(8, 8, 8, 8),
+        };
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 52f));
 
         var tabs = new TabControl { Dock = DockStyle.Fill };
         var aboutPage = new TabPage("About");
         var healthPage = new TabPage("Health");
+
+        var aboutLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 2,
+            Padding = new Padding(4),
+        };
+        aboutLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+        aboutLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36f));
 
         _info = new TextBox
         {
@@ -58,7 +82,20 @@ internal sealed class SupportForm : Form
             Font = new Font("Consolas", 9f),
             Text = DiagnosticsInfo.Summarize(settings, connection.IsConnected, readerLabel()),
         };
-        aboutPage.Controls.Add(_info);
+
+        _chkDebug = new CheckBox
+        {
+            Text = "Debug Mode (show EPC)",
+            AutoSize = true,
+            Dock = DockStyle.Left,
+            Checked = _getDebugMode(),
+            Margin = new Padding(0, 6, 0, 0),
+        };
+        _chkDebug.CheckedChanged += (_, _) => _setDebugMode(_chkDebug.Checked);
+
+        aboutLayout.Controls.Add(_info, 0, 0);
+        aboutLayout.Controls.Add(_chkDebug, 0, 1);
+        aboutPage.Controls.Add(aboutLayout);
 
         _health = new ListView
         {
@@ -78,24 +115,43 @@ internal sealed class SupportForm : Form
 
         var buttons = new FlowLayoutPanel
         {
-            Dock = DockStyle.Bottom,
-            Height = 48,
+            Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.RightToLeft,
-            Padding = new Padding(8),
+            WrapContents = false,
+            Padding = new Padding(0, 8, 0, 0),
+            Margin = new Padding(0),
         };
 
-        var btnClose = new Button { Text = "Close", Width = 100, DialogResult = DialogResult.Cancel };
-        var btnExport = new Button { Text = "Export diagnostics…", Width = 150, AutoSize = false };
-        var btnOpenLogs = new Button { Text = "Open log folder", Width = 130 };
-        var btnRefresh = new Button { Text = "Refresh", Width = 100 };
-        _chkDebug = new CheckBox
+        var btnClose = new Button
         {
-            Text = "Debug Mode (show EPC)",
-            AutoSize = true,
-            Checked = _getDebugMode(),
-            Margin = new Padding(8, 10, 16, 0),
+            Text = "Close",
+            Width = 100,
+            Height = 32,
+            DialogResult = DialogResult.Cancel,
+            Margin = new Padding(0, 0, 0, 0),
         };
-        _chkDebug.CheckedChanged += (_, _) => _setDebugMode(_chkDebug.Checked);
+        var btnExport = new Button
+        {
+            Text = "Export diagnostics…",
+            Width = 150,
+            Height = 32,
+            AutoSize = false,
+            Margin = new Padding(8, 0, 0, 0),
+        };
+        var btnOpenLogs = new Button
+        {
+            Text = "Open log folder",
+            Width = 130,
+            Height = 32,
+            Margin = new Padding(8, 0, 0, 0),
+        };
+        var btnRefresh = new Button
+        {
+            Text = "Refresh",
+            Width = 100,
+            Height = 32,
+            Margin = new Padding(8, 0, 0, 0),
+        };
 
         btnExport.Click += (_, _) => Export();
         btnOpenLogs.Click += (_, _) => OpenLogs();
@@ -106,10 +162,10 @@ internal sealed class SupportForm : Form
         buttons.Controls.Add(btnExport);
         buttons.Controls.Add(btnOpenLogs);
         buttons.Controls.Add(btnRefresh);
-        buttons.Controls.Add(_chkDebug);
 
-        Controls.Add(tabs);
-        Controls.Add(buttons);
+        root.Controls.Add(tabs, 0, 0);
+        root.Controls.Add(buttons, 0, 1);
+        Controls.Add(root);
         CancelButton = btnClose;
 
         Load += (_, _) => RefreshAll();
