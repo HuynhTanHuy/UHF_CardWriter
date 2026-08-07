@@ -1045,11 +1045,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.App\\CareHR.UhfCardWriter.App.csproj",
+      "projectUniqueName": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.App\\CareHR.UhfCardWriter.App.csproj",
       "projectName": "CareHR.UhfCardWriter.App",
-      "projectPath": "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.App\\CareHR.UhfCardWriter.App.csproj",
+      "projectPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.App\\CareHR.UhfCardWriter.App.csproj",
       "packagesPath": "C:\\Users\\YangTV\\.nuget\\packages\\",
-      "outputPath": "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.App\\obj\\",
+      "outputPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.App\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
@@ -1069,11 +1069,11 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "projectReferences": {
-            "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
-              "projectPath": "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj"
+            "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
+              "projectPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj"
             },
-            "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj": {
-              "projectPath": "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj"
+            "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj": {
+              "projectPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj"
             }
           }
         }

@@ -33,10 +33,12 @@ public sealed class CardWriteOrchestrator
 
     /// <summary>
     /// Runs the MVP write workflow: Scan → Select → Write → Verify → Register.
+    /// When <paramref name="alreadyScanned"/> is provided, Scan is skipped (Presentation showed Factory EPC first).
     /// </summary>
     public CardWriteJobResult RunWriteCardJob(
         CardWriteJobRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        CardInformation? alreadyScanned = null)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -61,35 +63,43 @@ public sealed class CardWriteOrchestrator
                 "Hospital id, card type id and batch code are required.");
         }
 
-        // --- Scan (UC-004) ---
-        if (cancellationToken.IsCancellationRequested)
-            return CancelAndStop();
-
-        ScanResult scan;
-        try
+        CardInformation scanned;
+        if (alreadyScanned is not null)
         {
-            scan = _scanningService.ScanForSingleCard(request.ScanTimeoutMs, cancellationToken);
+            scanned = alreadyScanned;
         }
-        catch (OperationCanceledException)
+        else
         {
-            return CancelAndStop();
+            // --- Scan (UC-004) ---
+            if (cancellationToken.IsCancellationRequested)
+                return CancelAndStop();
+
+            ScanResult scan;
+            try
+            {
+                scan = _scanningService.ScanForSingleCard(request.ScanTimeoutMs, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return CancelAndStop();
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+                return CancelAndStop();
+
+            if (scan.Outcome == ScanOutcome.Cancelled)
+                return CancelAndStop();
+
+            if (!scan.Success || scan.Card is null)
+            {
+                return CardWriteJobResult.Fail(
+                    CardWriteJobStage.Scanning,
+                    scan.ErrorCode,
+                    scan.Message);
+            }
+
+            scanned = scan.Card;
         }
-
-        if (cancellationToken.IsCancellationRequested)
-            return CancelAndStop();
-
-        if (scan.Outcome == ScanOutcome.Cancelled)
-            return CancelAndStop();
-
-        if (!scan.Success || scan.Card is null)
-        {
-            return CardWriteJobResult.Fail(
-                CardWriteJobStage.Scanning,
-                scan.ErrorCode,
-                scan.Message);
-        }
-
-        var scanned = scan.Card;
 
         // --- Select (UC-005) ---
         var select = _scanningService.SelectCard(scanned.Identity);

@@ -76,3 +76,9 @@ e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.App\obj\x64\Release\net8.0-win
 e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.App\obj\x64\Release\net8.0-windows\win-x64\CareHR.UhfCardWriter.App.genruntimeconfig.cache
 e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.App\obj\x64\Release\net8.0-windows\win-x64\ref\CareHR.UhfCardWriter.App.dll
 e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.App\bin\x64\Release\net8.0-windows\win-x64\appsettings.Local.json.example
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.App\bin\x64\Release\net8.0-windows\win-x64\Assets\carehr-logo.ico
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.App\bin\x64\Release\net8.0-windows\win-x64\Assets\carehr-logo.png
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.App\bin\x64\Release\net8.0-windows\win-x64\Assets\ux-review-main.png
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.App\bin\x64\Release\net8.0-windows\win-x64\Assets\crop-header-left.png
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.App\bin\x64\Release\net8.0-windows\win-x64\Assets\crop-header-right.png
+e:\CareHR\UHF_CardWriter\src\CareHR.UhfCardWriter.App\bin\x64\Release\net8.0-windows\win-x64\Assets\crop-header-full.png

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {}
+    "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {}
   },
   "projects": {
-    "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
+    "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj",
+        "projectUniqueName": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj",
         "projectName": "CareHR.UhfCardWriter.Application",
-        "projectPath": "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj",
+        "projectPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj",
         "packagesPath": "C:\\Users\\YangTV\\.nuget\\packages\\",
-        "outputPath": "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\obj\\",
+        "outputPath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Application\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

@@ -13,21 +13,28 @@ internal sealed class SupportForm : Form
     private readonly Func<string?> _readerLabel;
     private readonly Func<IEnumerable<string>> _operationLines;
     private readonly IReadOnlyDictionary<string, string> _timings;
+    private readonly Func<bool> _getDebugMode;
+    private readonly Action<bool> _setDebugMode;
     private readonly TextBox _info;
     private readonly ListView _health;
+    private readonly CheckBox _chkDebug;
 
     public SupportForm(
         AppSettings settings,
         CardConnectionService connection,
         Func<string?> readerLabel,
         Func<IEnumerable<string>> operationLines,
-        IReadOnlyDictionary<string, string> timings)
+        IReadOnlyDictionary<string, string> timings,
+        Func<bool> getDebugMode,
+        Action<bool> setDebugMode)
     {
         _settings = settings;
         _connection = connection;
         _readerLabel = readerLabel;
         _operationLines = operationLines;
         _timings = timings;
+        _getDebugMode = getDebugMode ?? (() => false);
+        _setDebugMode = setDebugMode ?? (_ => { });
 
         Text = "About & Support";
         StartPosition = FormStartPosition.CenterParent;
@@ -81,6 +88,14 @@ internal sealed class SupportForm : Form
         var btnExport = new Button { Text = "Export diagnostics…", Width = 150, AutoSize = false };
         var btnOpenLogs = new Button { Text = "Open log folder", Width = 130 };
         var btnRefresh = new Button { Text = "Refresh", Width = 100 };
+        _chkDebug = new CheckBox
+        {
+            Text = "Debug Mode (show EPC)",
+            AutoSize = true,
+            Checked = _getDebugMode(),
+            Margin = new Padding(8, 10, 16, 0),
+        };
+        _chkDebug.CheckedChanged += (_, _) => _setDebugMode(_chkDebug.Checked);
 
         btnExport.Click += (_, _) => Export();
         btnOpenLogs.Click += (_, _) => OpenLogs();
@@ -91,6 +106,7 @@ internal sealed class SupportForm : Form
         buttons.Controls.Add(btnExport);
         buttons.Controls.Add(btnOpenLogs);
         buttons.Controls.Add(btnRefresh);
+        buttons.Controls.Add(_chkDebug);
 
         Controls.Add(tabs);
         Controls.Add(buttons);

@@ -4,12 +4,14 @@ namespace CareHR.UhfCardWriter.App.Presentation;
 public enum UiState
 {
     Disconnected,
-    Connected,
+    Ready,
+    WaitingForCard,
     Scanning,
     Writing,
     Verifying,
     Registering,
-    Completed,
-    Error,
+    Success,
+    Failed,
+    Done,
     Busy,
 }

@@ -3,6 +3,7 @@ using System.Text.Json;
 using CareHR.UhfCardWriter.Application.Abstractions;
 using CareHR.UhfCardWriter.Application.Devices;
 using CareHR.UhfCardWriter.Application.Models;
+using CareHR.UhfCardWriter.Application.Services;
 
 namespace CareHR.UhfCardWriter.Infrastructure.Registration;
 
@@ -68,7 +69,7 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
         if (string.IsNullOrWhiteSpace(batch))
             return RegistrationResult.Fail(DeviceErrorCode.InvalidParameter, "Thiếu lô thẻ.");
 
-        var cardNumber = ResolveCardNumber(request.Identity);
+        var cardNumber = CardNumberBuilder.ToCardNumberFromEpcBytes(request.Identity.Epc);
         if (string.IsNullOrWhiteSpace(cardNumber))
             return RegistrationResult.Fail(DeviceErrorCode.InvalidParameter, "Thiếu mã thẻ.");
 
@@ -157,29 +158,6 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
         if (string.IsNullOrEmpty(text) || text.Length <= max)
             return text;
         return text[..(max - 3)] + "...";
-    }
-
-    private static string ResolveCardNumber(CardIdentity identity)
-    {
-        var bytes = identity.Epc;
-        if (bytes.Length == 0)
-            return string.Empty;
-
-        var allPrintableAscii = true;
-        for (var i = 0; i < bytes.Length; i++)
-        {
-            var b = bytes[i];
-            if (b < 0x20 || b > 0x7E)
-            {
-                allPrintableAscii = false;
-                break;
-            }
-        }
-
-        if (allPrintableAscii)
-            return Encoding.ASCII.GetString(bytes).Trim();
-
-        return (identity.EpcHex ?? string.Empty).Trim();
     }
 
     private static string FirstNonEmpty(string? a, string? b)

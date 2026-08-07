@@ -30,6 +30,8 @@ internal static class ConfigurationValidator
             {
                 if (string.IsNullOrWhiteSpace(h.Id) || !Guid.TryParse(h.Id, out _))
                     list.Add(new("CFG-HOSPITAL", "Error", $"Hospital '{h.Name}' has invalid Id (GUID required)."));
+                if (string.IsNullOrWhiteSpace(h.EffectiveHospitalNumber))
+                    list.Add(new("CFG-HOSPITAL-NUM", "Error", $"Hospital '{h.Name}' is missing HospitalNumber."));
             }
         }
 
@@ -50,9 +52,10 @@ internal static class ConfigurationValidator
         if (settings.Reader.BaudRate <= 0)
             list.Add(new("CFG-READER", "Warning", "Reader.BaudRate is invalid."));
 
-        if (!string.Equals(settings.Card.EpcEncoding, "Ascii", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(settings.Card.EpcEncoding, "Hex", StringComparison.OrdinalIgnoreCase))
-            list.Add(new("CFG-EPC", "Warning", "Card.EpcEncoding should be Ascii or Hex."));
+        if (settings.Card.BatchNumberWidth is < 1 or > 4)
+            list.Add(new("CFG-BATCH-W", "Warning", "Card.BatchNumberWidth should be 1–4 (CardWritter uses 2)."));
+        if (settings.Card.SerialNumberWidth is < 1 or > 8)
+            list.Add(new("CFG-SERIAL-W", "Warning", "Card.SerialNumberWidth should be 1–8 (CardWritter uses 5)."));
 
         if (!UiPasswordOk(settings.Card.AccessPasswordHex))
             list.Add(new("CFG-PASSWORD", "Warning",

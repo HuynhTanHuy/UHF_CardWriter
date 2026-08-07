@@ -1,52 +1,59 @@
 using CareHR.UhfCardWriter.App.Controls;
+using CareHR.UhfCardWriter.App.Presentation;
 
 namespace CareHR.UhfCardWriter.App.Forms;
 
 partial class MainForm
 {
     private System.ComponentModel.IContainer components = null!;
+    private TableLayoutPanel shellLayout = null!;
+    private Panel headerPanel = null!;
+    private PictureBox picLogo = null!;
+    private Label lblBrand = null!;
+    private Control btnSettings = null!;
+    private ToolTip tipSettings = null!;
+    private Panel bodyPanel = null!;
     private TableLayoutPanel rootLayout = null!;
     private Panel leftPanel = null!;
     private Panel rightPanel = null!;
     private TableLayoutPanel leftLayout = null!;
-    private TableLayoutPanel rightLayout = null!;
-    private Label lblBrand = null!;
-    private Label lblReader = null!;
+    private Control lblReader = null!;
     private ComboBox cboReader = null!;
-    private Label lblHospital = null!;
+    private Label lblReaderStatus = null!;
+    private Control lblHospital = null!;
     private ComboBox cboHospital = null!;
-    private Label lblCardType = null!;
+    private Control lblCardType = null!;
     private ComboBox cboCardType = null!;
-    private Label lblStart = null!;
-    private TextBox txtStart = null!;
-    private Label lblEnd = null!;
-    private TextBox txtEnd = null!;
-    private Label lblCurrent = null!;
-    private TextBox txtCurrent = null!;
-    private Label lblTargetEpc = null!;
-    private TextBox txtTargetEpc = null!;
-    private Label lblCurrentEpc = null!;
-    private TextBox txtCurrentEpc = null!;
-    private Label lblBatch = null!;
+    private Control lblBatch = null!;
     private TextBox txtBatch = null!;
-    private FlowLayoutPanel buttonBar = null!;
+    private Control lblStart = null!;
+    private TextBox txtStart = null!;
+    private Control lblEnd = null!;
+    private TextBox txtEnd = null!;
+    private Control lblCurrent = null!;
+    private TextBox txtCurrent = null!;
+    private Label lblCurrentHint = null!;
+    private Panel debugPanel = null!;
+    private Control lblTargetEpc = null!;
+    private TextBox txtTargetEpc = null!;
+    private Control lblCurrentEpc = null!;
+    private TextBox txtCurrentEpc = null!;
+    private TableLayoutPanel buttonBar = null!;
     private Button btnConnect = null!;
-    private Button btnScan = null!;
-    private Button btnWrite = null!;
-    private Button btnCancel = null!;
-    private Button btnRefresh = null!;
-    private Button btnSettings = null!;
+    private Button btnStart = null!;
+    private Button btnStop = null!;
+    private Panel cardPreviewPanel = null!;
+    private Control lblFactoryCaption = null!;
+    private Label lblFactoryEpc = null!;
+    private Label lblArrow = null!;
+    private Control lblTargetCaption = null!;
+    private Label lblTargetCard = null!;
     private StatusPanel statusPanel = null!;
-    private WorkflowProgressControl workflowProgress = null!;
-    private GroupBox grpResult = null!;
-    private Label lblResultReader = null!;
-    private Label lblResultHospital = null!;
-    private Label lblResultCardType = null!;
-    private Label lblResultSerial = null!;
-    private Label lblResultCurrentEpc = null!;
-    private Label lblResultTargetEpc = null!;
+    private BatchResultPanel batchResult = null!;
     private OperationLogControl operationLog = null!;
-    private Label lblIllustration = null!;
+    private Panel statusBar = null!;
+    private Label lblStatusBarLeft = null!;
+    private Label lblStatusBarRight = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -58,251 +65,555 @@ partial class MainForm
     private void InitializeComponent()
     {
         components = new System.ComponentModel.Container();
+        tipSettings = new ToolTip(components);
         SuspendLayout();
 
         Text = "CareHR UHF Card Writer";
-        AutoScaleMode = AutoScaleMode.Font;
-        ClientSize = new Size(1100, 700);
-        MinimumSize = new Size(980, 640);
+        AutoScaleMode = AutoScaleMode.Dpi;
+        AutoScaleDimensions = new SizeF(96f, 96f);
+        ClientSize = new Size(1200, 720);
+        MinimumSize = new Size(1024, 640);
         StartPosition = FormStartPosition.CenterScreen;
-        Font = new Font("Segoe UI", 9.75f);
-        BackColor = Color.FromArgb(245, 247, 248);
+        Font = new Font("Segoe UI", 10f);
+        BackColor = UiColors.Canvas;
+        try
+        {
+            var icoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "carehr-logo.ico");
+            if (File.Exists(icoPath))
+                Icon = new Icon(icoPath);
+        }
+        catch
+        {
+            // optional
+        }
+
+        shellLayout = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 3,
+            Padding = new Padding(0),
+        };
+        shellLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        shellLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+        shellLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 28));
+
+        // --- Header ---
+        headerPanel = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = UiColors.White,
+            Padding = new Padding(12, 0, 8, 0),
+        };
+
+        var settingsHost = new Panel
+        {
+            Width = 40,
+            Dock = DockStyle.Right,
+            BackColor = Color.Transparent,
+            Padding = new Padding(0),
+            Margin = new Padding(0),
+        };
+
+        var settingsBtn = new Button
+        {
+            Text = string.Empty,
+            Dock = DockStyle.Fill,
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.White,
+            Cursor = Cursors.Hand,
+            TabStop = false,
+            ImageAlign = ContentAlignment.MiddleCenter,
+            Margin = new Padding(0),
+            Padding = new Padding(0),
+        };
+        settingsBtn.FlatAppearance.BorderSize = 0;
+        settingsBtn.UseVisualStyleBackColor = false;
+        settingsBtn.FlatAppearance.MouseOverBackColor = Color.FromArgb(236, 239, 241);
+        var gearImg = UiGlyphs.CreateGearImage(22, Color.FromArgb(84, 110, 122));
+        var gearHover = UiGlyphs.CreateGearImage(22, UiColors.CareHrBlue);
+        settingsBtn.Image = gearImg;
+        tipSettings.SetToolTip(settingsBtn, "Settings");
+        settingsBtn.Click += (_, _) => BtnSettings_Click(settingsBtn, EventArgs.Empty);
+        settingsBtn.MouseEnter += (_, _) => settingsBtn.Image = gearHover;
+        settingsBtn.MouseLeave += (_, _) => settingsBtn.Image = gearImg;
+        btnSettings = settingsBtn;
+        settingsHost.Controls.Add(settingsBtn);
+
+        var brandHost = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Color.Transparent,
+            Margin = new Padding(0),
+            Padding = new Padding(0),
+        };
+
+        picLogo = new PictureBox
+        {
+            Size = new Size(32, 32),
+            Location = new Point(0, 10),
+            SizeMode = PictureBoxSizeMode.Zoom,
+            BackColor = Color.Transparent,
+        };
+        try
+        {
+            var logoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "carehr-logo.png");
+            if (File.Exists(logoPath))
+                picLogo.Image = Image.FromFile(logoPath);
+        }
+        catch
+        {
+            // optional
+        }
+
+        lblBrand = new Label
+        {
+            Text = "CareHR UHF Card Writer",
+            Font = new Font("Segoe UI Semibold", 13f, FontStyle.Bold),
+            ForeColor = UiColors.CareHrBlue,
+            AutoSize = true,
+            Location = new Point(40, 14),
+            TextAlign = ContentAlignment.MiddleLeft,
+        };
+
+        brandHost.Controls.Add(picLogo);
+        brandHost.Controls.Add(lblBrand);
+        void AlignBrand()
+        {
+            var mid = Math.Max(0, (brandHost.ClientSize.Height - picLogo.Height) / 2);
+            picLogo.Top = mid;
+            lblBrand.Top = mid + Math.Max(0, (picLogo.Height - lblBrand.PreferredHeight) / 2);
+            lblBrand.Left = picLogo.Right + 8;
+        }
+        brandHost.Resize += (_, _) => AlignBrand();
+        AlignBrand();
+
+        // Fill first, then Right — higher z-order docks to the outer edge first.
+        headerPanel.Controls.Add(brandHost);
+        headerPanel.Controls.Add(settingsHost);
+
+        // --- Body ---
+        bodyPanel = new Panel
+        {
+            Dock = DockStyle.Fill,
+            Padding = new Padding(12, 8, 12, 8),
+            BackColor = UiColors.Canvas,
+        };
 
         rootLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
             RowCount = 1,
-            Padding = new Padding(12),
         };
-        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 48f));
-        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 52f));
+        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 36f));
+        rootLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 64f));
 
-        leftPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(4), BackColor = Color.White };
-        rightPanel = new Panel { Dock = DockStyle.Fill, Padding = new Padding(4), BackColor = Color.White };
+        leftPanel = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = UiColors.White,
+            Padding = new Padding(0),
+            Margin = new Padding(0, 0, 8, 0),
+            BorderStyle = BorderStyle.FixedSingle,
+        };
+        var leftShell = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 1,
+            Margin = new Padding(0),
+            Padding = new Padding(0),
+        };
+        leftShell.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+        rightPanel = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Color.Transparent,
+            Padding = new Padding(0),
+        };
 
-        // --- Left ---
+        buttonBar = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 3,
+            RowCount = 1,
+            Padding = new Padding(0, 6, 0, 4),
+            BackColor = UiColors.White,
+            Margin = new Padding(0),
+        };
+        buttonBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
+        buttonBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
+        buttonBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.34f));
+
+        btnConnect = CreateActionButton("Connect", UiColors.CareHrBlue, UiGlyphs.Connect);
+        btnStart = CreateActionButton("Start", UiColors.Success, UiGlyphs.Play);
+        btnStop = CreateActionButton("Stop", UiColors.Error, UiGlyphs.Stop);
+        btnConnect.Click += BtnConnect_Click;
+        btnStart.Click += BtnStart_Click;
+        btnStop.Click += BtnStop_Click;
+        buttonBar.Controls.Add(btnConnect, 0, 0);
+        buttonBar.Controls.Add(btnStart, 1, 0);
+        buttonBar.Controls.Add(btnStop, 2, 0);
+
         leftLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 12,
-            Padding = new Padding(12),
+            RowCount = 10,
+            Padding = new Padding(14, 14, 14, 10),
         };
-        leftLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120));
+        leftLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 118));
         leftLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-        for (var i = 0; i < 11; i++)
+        for (var i = 0; i < 7; i++)
             leftLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
+        leftLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));
+        leftLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
         leftLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
 
-        lblBrand = new Label
+        lblReader = CreateFieldLabel(UiGlyphs.Reader, "Reader");
+        var readerRow = new TableLayoutPanel
         {
-            Text = "CareHR  ·  UHF Card Writer",
-            Font = new Font("Segoe UI Semibold", 14f, FontStyle.Bold),
-            ForeColor = Color.FromArgb(13, 115, 119),
             Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft,
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = new Padding(0, 4, 0, 4),
         };
-        leftLayout.SetColumnSpan(lblBrand, 2);
-        leftLayout.Controls.Add(lblBrand, 0, 0);
-
-        lblReader = CreateFieldLabel("Reader");
+        readerRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        readerRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
         cboReader = CreateCombo();
-        leftLayout.Controls.Add(lblReader, 0, 1);
-        leftLayout.Controls.Add(cboReader, 1, 1);
+        lblReaderStatus = new Label
+        {
+            Dock = DockStyle.Fill,
+            Text = "Offline",
+            Font = new Font("Segoe UI Semibold", 9f),
+            ForeColor = UiColors.TextMuted,
+            TextAlign = ContentAlignment.MiddleRight,
+        };
+        readerRow.Controls.Add(cboReader, 0, 0);
+        readerRow.Controls.Add(lblReaderStatus, 1, 0);
+        leftLayout.Controls.Add(lblReader, 0, 0);
+        leftLayout.Controls.Add(readerRow, 1, 0);
 
-        lblHospital = CreateFieldLabel("Hospital");
+        lblHospital = CreateFieldLabel(UiGlyphs.Hospital, "Hospital");
         cboHospital = CreateCombo();
-        leftLayout.Controls.Add(lblHospital, 0, 2);
-        leftLayout.Controls.Add(cboHospital, 1, 2);
+        leftLayout.Controls.Add(lblHospital, 0, 1);
+        leftLayout.Controls.Add(WrapInput(cboHospital), 1, 1);
 
-        lblCardType = CreateFieldLabel("Card type");
+        lblCardType = CreateFieldLabel(UiGlyphs.CardType, "Card Type");
         cboCardType = CreateCombo();
-        leftLayout.Controls.Add(lblCardType, 0, 3);
-        leftLayout.Controls.Add(cboCardType, 1, 3);
+        leftLayout.Controls.Add(lblCardType, 0, 2);
+        leftLayout.Controls.Add(WrapInput(cboCardType), 1, 2);
 
-        lblStart = CreateFieldLabel("Start #");
+        lblBatch = CreateFieldLabel(UiGlyphs.Batch, "Batch");
+        txtBatch = CreateTextBox();
+        leftLayout.Controls.Add(lblBatch, 0, 3);
+        leftLayout.Controls.Add(WrapInput(txtBatch), 1, 3);
+
+        lblStart = CreateFieldLabel(UiGlyphs.Start, "Start");
         txtStart = CreateTextBox();
         leftLayout.Controls.Add(lblStart, 0, 4);
-        leftLayout.Controls.Add(txtStart, 1, 4);
+        leftLayout.Controls.Add(WrapInput(txtStart), 1, 4);
 
-        lblEnd = CreateFieldLabel("End #");
+        lblEnd = CreateFieldLabel(UiGlyphs.End, "End");
         txtEnd = CreateTextBox();
         leftLayout.Controls.Add(lblEnd, 0, 5);
-        leftLayout.Controls.Add(txtEnd, 1, 5);
+        leftLayout.Controls.Add(WrapInput(txtEnd), 1, 5);
 
-        lblCurrent = CreateFieldLabel("Current #");
+        lblCurrent = CreateFieldLabel(UiGlyphs.Current, "Current");
         txtCurrent = CreateTextBox();
+        txtCurrent.ReadOnly = true;
+        txtCurrent.BackColor = UiColors.FieldFill;
+        txtCurrent.TabStop = false;
+        var currentTip = new ToolTip();
+        currentTip.SetToolTip(txtCurrent, "Current sequence — advances after success");
+        currentTip.SetToolTip(lblCurrent, "Current sequence — advances after success");
+        lblCurrentHint = new Label { Visible = false, Height = 0 };
         leftLayout.Controls.Add(lblCurrent, 0, 6);
-        leftLayout.Controls.Add(txtCurrent, 1, 6);
+        leftLayout.Controls.Add(WrapInput(txtCurrent), 1, 6);
 
-        lblTargetEpc = CreateFieldLabel("Target EPC");
-        txtTargetEpc = CreateTextBox();
-        txtTargetEpc.Font = new Font("Consolas", 10f);
-        leftLayout.Controls.Add(lblTargetEpc, 0, 7);
-        leftLayout.Controls.Add(txtTargetEpc, 1, 7);
-
-        lblCurrentEpc = CreateFieldLabel("Current EPC");
-        txtCurrentEpc = CreateTextBox();
-        txtCurrentEpc.ReadOnly = true;
-        txtCurrentEpc.BackColor = Color.FromArgb(236, 239, 241);
-        txtCurrentEpc.Font = new Font("Consolas", 10f);
-        leftLayout.Controls.Add(lblCurrentEpc, 0, 8);
-        leftLayout.Controls.Add(txtCurrentEpc, 1, 8);
-
-        lblBatch = CreateFieldLabel("Batch");
-        txtBatch = CreateTextBox();
-        leftLayout.Controls.Add(lblBatch, 0, 9);
-        leftLayout.Controls.Add(txtBatch, 1, 9);
-
-        buttonBar = new FlowLayoutPanel
+        debugPanel = new Panel { Dock = DockStyle.Fill, Visible = false };
+        var debugLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = true,
-            Padding = new Padding(0, 8, 0, 0),
+            ColumnCount = 2,
+            RowCount = 2,
         };
+        debugLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 90));
+        debugLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        debugLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
+        debugLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50f));
+        lblTargetEpc = CreateFieldLabel(UiGlyphs.TargetCard, "Target EPC");
+        txtTargetEpc = CreateTextBox();
+        txtTargetEpc.Font = new Font("Consolas", 9f);
+        txtTargetEpc.ReadOnly = true;
+        txtTargetEpc.BackColor = UiColors.FieldFill;
+        lblCurrentEpc = CreateFieldLabel(UiGlyphs.FactoryCard, "Factory EPC");
+        txtCurrentEpc = CreateTextBox();
+        txtCurrentEpc.ReadOnly = true;
+        txtCurrentEpc.Font = new Font("Consolas", 9f);
+        txtCurrentEpc.BackColor = UiColors.FieldFill;
+        debugLayout.Controls.Add(lblTargetEpc, 0, 0);
+        debugLayout.Controls.Add(txtTargetEpc, 1, 0);
+        debugLayout.Controls.Add(lblCurrentEpc, 0, 1);
+        debugLayout.Controls.Add(txtCurrentEpc, 1, 1);
+        debugPanel.Controls.Add(debugLayout);
+        leftLayout.SetColumnSpan(debugPanel, 2);
+        leftLayout.Controls.Add(debugPanel, 0, 7);
+
         leftLayout.SetColumnSpan(buttonBar, 2);
+        leftLayout.Controls.Add(buttonBar, 0, 8);
 
-        btnConnect = CreateActionButton("Connect (F5)", Color.FromArgb(13, 115, 119));
-        btnScan = CreateActionButton("Scan (F6)", Color.FromArgb(2, 119, 189));
-        btnWrite = CreateActionButton("Write (F7)", Color.FromArgb(46, 125, 50));
-        btnCancel = CreateActionButton("Cancel (Esc)", Color.FromArgb(198, 40, 40));
-        btnRefresh = CreateActionButton("Refresh", Color.FromArgb(69, 90, 100));
-        btnSettings = CreateActionButton("Settings", Color.FromArgb(69, 90, 100));
+        leftShell.Controls.Add(leftLayout, 0, 0);
+        leftPanel.Controls.Add(leftShell);
 
-        btnConnect.Click += BtnConnect_Click;
-        btnScan.Click += BtnScan_Click;
-        btnWrite.Click += BtnWrite_Click;
-        btnCancel.Click += BtnCancel_Click;
-        btnRefresh.Click += BtnRefresh_Click;
-        btnSettings.Click += BtnSettings_Click;
+        cardPreviewPanel = new Panel
+        {
+            Dock = DockStyle.Top,
+            Height = 132,
+            BackColor = UiColors.White,
+            Padding = new Padding(16, 10, 16, 10),
+            Margin = new Padding(0, 0, 0, 8),
+            BorderStyle = BorderStyle.FixedSingle,
+        };
 
-        buttonBar.Controls.AddRange(new Control[] { btnConnect, btnScan, btnWrite, btnCancel, btnRefresh, btnSettings });
-        leftLayout.Controls.Add(buttonBar, 0, 10);
-
-        leftPanel.Controls.Add(leftLayout);
-
-        // --- Right ---
-        rightLayout = new TableLayoutPanel
+        var previewLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
             RowCount = 5,
-            Padding = new Padding(8),
         };
-        rightLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 56));
-        rightLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 140));
-        rightLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 120));
-        rightLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 160));
-        rightLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+        previewLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 18));
+        previewLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
+        previewLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 16));
+        previewLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 18));
+        previewLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
 
-        workflowProgress = new WorkflowProgressControl { Dock = DockStyle.Fill };
-        statusPanel = new StatusPanel { Dock = DockStyle.Fill, Margin = new Padding(0, 8, 0, 8) };
-
-        lblIllustration = new Label
+        lblFactoryCaption = CreateCenteredCaption(UiGlyphs.FactoryCard, "Factory Card");
+        lblFactoryEpc = new Label
         {
+            Text = "—",
             Dock = DockStyle.Fill,
+            Font = new Font("Consolas", 11f, FontStyle.Bold),
+            ForeColor = UiColors.TextPrimary,
             TextAlign = ContentAlignment.MiddleCenter,
-            Font = new Font("Segoe UI Semibold", 12f),
-            ForeColor = Color.FromArgb(13, 115, 119),
-            BackColor = Color.FromArgb(232, 245, 245),
-            Text = "UHF Desk Reader\nPlace exactly one CareHR card in the field",
-            Margin = new Padding(0, 0, 0, 8),
+            AutoEllipsis = true,
+        };
+        lblArrow = new Label
+        {
+            Text = UiGlyphs.ArrowDown,
+            Dock = DockStyle.Fill,
+            Font = UiGlyphs.IconFont(10f),
+            ForeColor = UiColors.CareHrBlue,
+            TextAlign = ContentAlignment.MiddleCenter,
+        };
+        lblTargetCaption = CreateCenteredCaption(UiGlyphs.TargetCard, "Target Card");
+        lblTargetCard = new Label
+        {
+            Text = "—",
+            Dock = DockStyle.Fill,
+            Font = new Font("Segoe UI Semibold", 22f, FontStyle.Bold),
+            ForeColor = UiColors.CareHrBlue,
+            TextAlign = ContentAlignment.MiddleCenter,
+            AutoEllipsis = true,
         };
 
-        grpResult = new GroupBox
+        previewLayout.Controls.Add(lblFactoryCaption, 0, 0);
+        previewLayout.Controls.Add(lblFactoryEpc, 0, 1);
+        previewLayout.Controls.Add(lblArrow, 0, 2);
+        previewLayout.Controls.Add(lblTargetCaption, 0, 3);
+        previewLayout.Controls.Add(lblTargetCard, 0, 4);
+        cardPreviewPanel.Controls.Add(previewLayout);
+
+        statusPanel = new StatusPanel
+        {
+            Dock = DockStyle.Top,
+            Height = 210,
+            Margin = new Padding(0, 8, 0, 0),
+        };
+        batchResult = new BatchResultPanel
+        {
+            Dock = DockStyle.Top,
+            Height = BatchResultPanel.PreferredPanelHeight,
+            MinimumSize = new Size(0, BatchResultPanel.PreferredPanelHeight),
+            Margin = new Padding(0, 8, 0, 8),
+        };
+        operationLog = new OperationLogControl
         {
             Dock = DockStyle.Fill,
-            Text = "Result",
-            Font = new Font("Segoe UI Semibold", 9.75f),
-            Padding = new Padding(10),
+            Margin = new Padding(0),
         };
-        var resultLayout = new TableLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            ColumnCount = 2,
-            RowCount = 6,
-        };
-        resultLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 110));
-        resultLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-        lblResultReader = AddResultRow(resultLayout, 0, "Reader");
-        lblResultHospital = AddResultRow(resultLayout, 1, "Hospital");
-        lblResultCardType = AddResultRow(resultLayout, 2, "Card type");
-        lblResultSerial = AddResultRow(resultLayout, 3, "Serial");
-        lblResultCurrentEpc = AddResultRow(resultLayout, 4, "Current EPC");
-        lblResultTargetEpc = AddResultRow(resultLayout, 5, "Target EPC");
-        grpResult.Controls.Add(resultLayout);
 
-        operationLog = new OperationLogControl { Dock = DockStyle.Fill, Margin = new Padding(0, 8, 0, 0) };
-
-        rightLayout.Controls.Add(workflowProgress, 0, 0);
-        rightLayout.Controls.Add(statusPanel, 0, 1);
-        rightLayout.Controls.Add(lblIllustration, 0, 2);
-        rightLayout.Controls.Add(grpResult, 0, 3);
-        rightLayout.Controls.Add(operationLog, 0, 4);
-
-        rightPanel.Controls.Add(rightLayout);
+        rightPanel.Controls.Add(operationLog);
+        rightPanel.Controls.Add(batchResult);
+        rightPanel.Controls.Add(statusPanel);
+        rightPanel.Controls.Add(cardPreviewPanel);
 
         rootLayout.Controls.Add(leftPanel, 0, 0);
         rootLayout.Controls.Add(rightPanel, 1, 0);
-        Controls.Add(rootLayout);
+        bodyPanel.Controls.Add(rootLayout);
+
+        statusBar = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Color.FromArgb(250, 250, 250),
+            Padding = new Padding(12, 0, 12, 0),
+        };
+        lblStatusBarLeft = new Label
+        {
+            Text = "Reader offline",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 8.5f),
+            ForeColor = UiColors.TextMuted,
+            Location = new Point(12, 6),
+        };
+        lblStatusBarRight = new Label
+        {
+            Text = "Version 1.0.0",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 8.5f),
+            ForeColor = UiColors.TextMuted,
+            Anchor = AnchorStyles.Top | AnchorStyles.Right,
+        };
+        statusBar.Controls.Add(lblStatusBarLeft);
+        statusBar.Controls.Add(lblStatusBarRight);
+        statusBar.Resize += (_, _) =>
+        {
+            lblStatusBarRight.Location = new Point(statusBar.ClientSize.Width - lblStatusBarRight.Width - 12, 6);
+        };
+
+        shellLayout.Controls.Add(headerPanel, 0, 0);
+        shellLayout.Controls.Add(bodyPanel, 0, 1);
+        shellLayout.Controls.Add(statusBar, 0, 2);
+        Controls.Add(shellLayout);
 
         ResumeLayout(false);
     }
 
-    private static Label CreateFieldLabel(string text) => new()
+    private void SetDebugRowVisible(bool visible)
     {
-        Text = text,
-        Dock = DockStyle.Fill,
-        TextAlign = ContentAlignment.MiddleLeft,
-        ForeColor = Color.FromArgb(55, 71, 79),
-    };
+        debugPanel.Visible = visible;
+        if (leftLayout.RowStyles.Count > 7)
+            leftLayout.RowStyles[7].Height = visible ? 72f : 0f;
+    }
+
+    private static Control CreateCenteredCaption(string glyph, string text)
+    {
+        var host = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 3,
+            RowCount = 1,
+            Margin = new Padding(0),
+        };
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        host.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
+
+        var pair = new TableLayoutPanel
+        {
+            AutoSize = true,
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = new Padding(0),
+        };
+        pair.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 18));
+        pair.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+
+        var icon = UiGlyphs.CreateIconLabel(glyph, 8.5f, UiColors.CareHrBlue);
+        icon.Size = new Size(18, 18);
+        icon.Dock = DockStyle.None;
+        var label = new Label
+        {
+            Text = text,
+            AutoSize = true,
+            Font = new Font("Segoe UI Semibold", 8.5f),
+            ForeColor = UiColors.TextMuted,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Margin = new Padding(0, 1, 0, 0),
+        };
+        pair.Controls.Add(icon, 0, 0);
+        pair.Controls.Add(label, 1, 0);
+        host.Controls.Add(new Panel { Dock = DockStyle.Fill }, 0, 0);
+        host.Controls.Add(pair, 1, 0);
+        host.Controls.Add(new Panel { Dock = DockStyle.Fill }, 2, 0);
+        return host;
+    }
+
+    private static Control CreateFieldLabel(string glyph, string text)
+    {
+        var row = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = new Padding(0),
+        };
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 22));
+        row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+
+        var icon = UiGlyphs.CreateIconLabel(glyph, 10f, UiColors.CareHrBlue);
+        var label = new Label
+        {
+            Text = text,
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Font = new Font("Segoe UI Semibold", 9.5f),
+            ForeColor = Color.FromArgb(55, 71, 79),
+        };
+        row.Controls.Add(icon, 0, 0);
+        row.Controls.Add(label, 1, 0);
+        return row;
+    }
+
+    private static Control WrapInput(Control input)
+    {
+        input.Dock = DockStyle.Fill;
+        input.Margin = new Padding(0, 4, 0, 4);
+        return input;
+    }
 
     private static ComboBox CreateCombo() => new()
     {
         Dock = DockStyle.Fill,
         DropDownStyle = ComboBoxStyle.DropDownList,
         FlatStyle = FlatStyle.System,
+        Font = new Font("Segoe UI", 10f),
+        Margin = new Padding(0, 4, 0, 4),
     };
 
     private static TextBox CreateTextBox() => new()
     {
         Dock = DockStyle.Fill,
         BorderStyle = BorderStyle.FixedSingle,
+        Font = new Font("Segoe UI", 10.5f),
+        Margin = new Padding(0, 4, 0, 4),
     };
 
-    private static Button CreateActionButton(string text, Color back) => new()
+    private static Button CreateActionButton(string text, Color back, string glyph)
     {
-        Text = text,
-        AutoSize = true,
-        MinimumSize = new Size(110, 40),
-        Margin = new Padding(0, 0, 8, 8),
-        FlatStyle = FlatStyle.Flat,
-        BackColor = back,
-        ForeColor = Color.White,
-        Font = new Font("Segoe UI Semibold", 9.5f, FontStyle.Bold),
-        Cursor = Cursors.Hand,
-    };
-
-    private static Label AddResultRow(TableLayoutPanel layout, int row, string title)
-    {
-        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 16.6f));
-        layout.Controls.Add(new Label
+        var btn = new Button
         {
-            Text = title,
+            Text = text,
             Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft,
-            ForeColor = Color.FromArgb(84, 110, 122),
-        }, 0, row);
-        var value = new Label
-        {
-            Text = "—",
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Font = new Font("Consolas", 9f),
+            Margin = new Padding(4, 4, 4, 4),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = back,
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI Semibold", 11f, FontStyle.Bold),
+            Cursor = Cursors.Hand,
+            TextAlign = ContentAlignment.MiddleCenter,
+            TextImageRelation = TextImageRelation.ImageBeforeText,
+            ImageAlign = ContentAlignment.MiddleLeft,
+            Padding = new Padding(10, 0, 8, 0),
+            UseVisualStyleBackColor = false,
+            FlatAppearance = { BorderSize = 0 },
         };
-        layout.Controls.Add(value, 1, row);
-        return value;
+
+        var img = UiGlyphs.CreateGlyphImage(glyph, 18, Color.White);
+        if (img is not null)
+            btn.Image = img;
+
+        return btn;
     }
 }

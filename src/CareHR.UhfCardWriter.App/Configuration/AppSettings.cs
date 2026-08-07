@@ -36,19 +36,32 @@ public sealed class ReaderSettings
 public sealed class CardSettings
 {
     public string AccessPasswordHex { get; set; } = "00000000";
-    public string DefaultBatchCode { get; set; } = "BATCH-001";
-    /// <summary>Ascii = hospital code + padded serial as ASCII bytes; Hex = operator hex in Target EPC.</summary>
-    public string EpcEncoding { get; set; } = "Ascii";
-    public int SerialPadWidth { get; set; } = 8;
+    /// <summary>Default batch/lô number (CardWritter group) used in card number D2.</summary>
+    public int DefaultBatchNumber { get; set; } = 1;
+    /// <summary>Digits for batch segment (CardWritter D2).</summary>
+    public int BatchNumberWidth { get; set; } = 2;
+    /// <summary>Digits for serial segment (CardWritter D5).</summary>
+    public int SerialNumberWidth { get; set; } = 5;
 }
 
 public sealed class HospitalOption
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
+    /// <summary>Official hospital number used in card number (e.g. 79048).</summary>
+    public string HospitalNumber { get; set; } = string.Empty;
+
+    /// <summary>Legacy alias; used only if <see cref="HospitalNumber"/> is empty.</summary>
     public string Code { get; set; } = string.Empty;
 
-    public override string ToString() => string.IsNullOrWhiteSpace(Code) ? Name : $"{Name} ({Code})";
+    public string EffectiveHospitalNumber =>
+        !string.IsNullOrWhiteSpace(HospitalNumber) ? HospitalNumber.Trim() : (Code ?? string.Empty).Trim();
+
+    public override string ToString()
+    {
+        var num = EffectiveHospitalNumber;
+        return string.IsNullOrWhiteSpace(num) ? Name : $"{Name} ({num})";
+    }
 }
 
 public sealed class CardTypeOption

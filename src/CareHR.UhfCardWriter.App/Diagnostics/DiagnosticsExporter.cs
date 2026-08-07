@@ -45,8 +45,11 @@ internal static class DiagnosticsExporter
         sb.AppendLine($"Reader.ComPort={settings.Reader.ComPort}");
         sb.AppendLine($"Reader.BaudRate={settings.Reader.BaudRate}");
         sb.AppendLine($"Reader.ScanTimeoutMs={settings.Reader.ScanTimeoutMs}");
-        sb.AppendLine($"Card.EpcEncoding={settings.Card.EpcEncoding}");
-        sb.AppendLine($"Card.DefaultBatchCode={settings.Card.DefaultBatchCode}");
+        sb.AppendLine($"Card.DefaultBatchNumber={settings.Card.DefaultBatchNumber}");
+        sb.AppendLine($"Card.BatchNumberWidth={settings.Card.BatchNumberWidth}");
+        sb.AppendLine($"Card.SerialNumberWidth={settings.Card.SerialNumberWidth}");
+        foreach (var h in settings.Hospitals)
+            sb.AppendLine($"Hospital={h.Name}; Number={h.EffectiveHospitalNumber}; Id={h.Id}");
         sb.AppendLine($"Card.AccessPasswordHex={(string.IsNullOrWhiteSpace(settings.Card.AccessPasswordHex) ? "(empty)" : "(set)")}");
         foreach (var h in settings.Hospitals)
             sb.AppendLine($"Hospital: {h.Name} | Id={h.Id} | Code={h.Code}");

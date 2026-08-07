@@ -9,6 +9,7 @@
     <Version>1.0.0</Version>
     <InformationalVersion>1.0.0+phase9</InformationalVersion>
     <Product>CareHR UHF Card Writer</Product>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
 
   <ItemGroup>
@@ -34,7 +35,14 @@
     <None Update="appsettings.Local.json.example">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Assets\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
+
+  <PropertyGroup>
+    <ApplicationIcon>Assets\carehr-logo.ico</ApplicationIcon>
+  </PropertyGroup>
 
   <!-- Native DLLs must sit next to the WinForms executable (from SDK API\x64). -->
   <ItemGroup>

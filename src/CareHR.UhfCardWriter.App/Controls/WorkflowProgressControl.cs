@@ -3,12 +3,12 @@ using CareHR.UhfCardWriter.App.Presentation;
 
 namespace CareHR.UhfCardWriter.App.Controls;
 
-/// <summary>Horizontal workflow step strip: Connect → Scan → Write → Verify → Register → Done.</summary>
+/// <summary>Optional legacy step strip (unused by batch MainForm; kept for diagnostics tooling).</summary>
 public sealed class WorkflowProgressControl : UserControl
 {
     private static readonly string[] Steps =
     {
-        "Connect", "Scan", "Write", "Verify", "Register", "Done",
+        "Connect", "Wait", "Write", "Done",
     };
 
     private readonly Label[] _labels;
@@ -80,13 +80,15 @@ public sealed class WorkflowProgressControl : UserControl
         SetActiveStep(state switch
         {
             UiState.Disconnected => 0,
-            UiState.Connected => 0,
+            UiState.Ready => 0,
+            UiState.WaitingForCard => 1,
             UiState.Scanning => 1,
             UiState.Writing => 2,
-            UiState.Verifying => 3,
-            UiState.Registering => 4,
-            UiState.Completed => 5,
-            UiState.Error => _activeIndex,
+            UiState.Verifying => 2,
+            UiState.Registering => 2,
+            UiState.Success => 3,
+            UiState.Done => 3,
+            UiState.Failed => _activeIndex,
             UiState.Busy => _activeIndex,
             _ => -1,
         });
