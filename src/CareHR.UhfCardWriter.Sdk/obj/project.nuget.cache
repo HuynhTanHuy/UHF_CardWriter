@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "eqGL7kFIpJc=",
+  "dgSpecHash": "2iP/87iwnjY=",
   "success": true,
-  "projectFilePath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj",
+  "projectFilePath": "e:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\YangTV\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.25\\microsoft.netcore.app.ref.8.0.25.nupkg.sha512",
     "C:\\Users\\YangTV\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.25\\microsoft.windowsdesktop.app.ref.8.0.25.nupkg.sha512",

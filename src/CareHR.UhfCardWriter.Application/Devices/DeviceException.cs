@@ -9,16 +9,11 @@ namespace CareHR.UhfCardWriter.Application.Devices;
 /// </remarks>
 public sealed class DeviceException : Exception
 {
-    /// <summary>Initializes a new <see cref="DeviceException"/>.</summary>
-    /// <param name="message">Error message.</param>
     public DeviceException(string message)
         : base(message)
     {
     }
 
-    /// <summary>Initializes a new <see cref="DeviceException"/> with an inner exception.</summary>
-    /// <param name="message">Error message.</param>
-    /// <param name="innerException">Inner exception.</param>
     public DeviceException(string message, Exception innerException)
         : base(message, innerException)
     {

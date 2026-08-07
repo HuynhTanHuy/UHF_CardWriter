@@ -12,7 +12,6 @@ public sealed class CardScannerAdapter : ICardScanner
 {
     private readonly IUhfSdk _sdk;
 
-    /// <summary>Creates an adapter over a shared SDK instance.</summary>
     /// <exception cref="ArgumentNullException"><paramref name="sdk"/> is null.</exception>
     public CardScannerAdapter(IUhfSdk sdk)
     {

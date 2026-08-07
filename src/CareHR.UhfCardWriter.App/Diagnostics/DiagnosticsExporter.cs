@@ -5,7 +5,6 @@ using CareHR.UhfCardWriter.Application.Services;
 
 namespace CareHR.UhfCardWriter.App.Diagnostics;
 
-/// <summary>Builds a support bundle (diagnostics + redacted config + recent logs).</summary>
 internal static class DiagnosticsExporter
 {
     public static string Export(

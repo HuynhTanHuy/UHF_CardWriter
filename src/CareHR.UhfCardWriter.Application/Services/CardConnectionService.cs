@@ -12,16 +12,13 @@ public sealed class CardConnectionService
 {
     private readonly ICardConnection _connection;
 
-    /// <summary>Initializes a new <see cref="CardConnectionService"/>.</summary>
     public CardConnectionService(ICardConnection connection)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
     }
 
-    /// <summary>Gets whether a reader session is open.</summary>
     public bool IsConnected => _connection.IsOpen;
 
-    /// <summary>Gets the current reader status snapshot.</summary>
     public ReaderStatusInfo GetStatus() =>
         _connection.IsOpen
             ? new ReaderStatusInfo(ReaderStatus.Connected, "Connected")

@@ -8,22 +8,14 @@ using Microsoft.Extensions.DependencyInjection;
 namespace CareHR.UhfCardWriter.Infrastructure.DependencyInjection;
 
 /// <summary>
-/// Registers CareHR card Infrastructure adapters, SDK session, and Application Services composition.
+/// Registers CareHR card Infrastructure adapters and a singleton SDK session.
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds card device adapters, registry adapter, and a singleton <see cref="IUhfSdk"/> session.
+    /// Wires <c>ICard*</c> adapters to a singleton <see cref="IUhfSdk"/> (not thread-safe — serialize access).
     /// </summary>
-    /// <param name="services">Service collection.</param>
-    /// <param name="apiOptions">CareHR registry API options; empty options yield registration Fail (not throw).</param>
-    /// <returns>The same service collection.</returns>
-    /// <remarks>
-    /// Application depends on <c>ICard*</c> ports only. SDK types remain inside Infrastructure.
-    /// Lifetime: Singleton session — not thread-safe; callers must serialize access.
-    /// Does not register Application Services — use <see cref="AddCareHrCardWriter"/> or
-    /// <c>AddApplicationServices</c> from the composition root.
-    /// </remarks>
+    /// <remarks>Does not register Application Services — use <see cref="AddCareHrCardWriter"/> or <c>AddApplicationServices</c>.</remarks>
     public static IServiceCollection AddUhfInfrastructure(
         this IServiceCollection services,
         CareHrCardApiOptions? apiOptions = null)
@@ -42,12 +34,7 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>
-    /// Full runtime composition: Application Services + Infrastructure ports/adapters + SDK.
-    /// </summary>
-    /// <param name="services">Service collection.</param>
-    /// <param name="configureApi">Optional CareHR registry API options.</param>
-    /// <returns>The same service collection.</returns>
+    /// <summary>Application Services + Infrastructure adapters + SDK session.</summary>
     public static IServiceCollection AddCareHrCardWriter(
         this IServiceCollection services,
         Action<CareHrCardApiOptions>? configureApi = null)

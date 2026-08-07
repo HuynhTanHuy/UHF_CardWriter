@@ -13,7 +13,6 @@ public sealed class CardWriterAdapter : ICardWriter
 {
     private readonly IUhfSdk _sdk;
 
-    /// <summary>Creates an adapter over a shared SDK instance.</summary>
     /// <exception cref="ArgumentNullException"><paramref name="sdk"/> is null.</exception>
     public CardWriterAdapter(IUhfSdk sdk)
     {

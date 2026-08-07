@@ -3,10 +3,6 @@ using CareHR.UhfCardWriter.App.Configuration;
 
 namespace CareHR.UhfCardWriter.App.Presentation;
 
-/// <summary>
-/// Presentation helpers for empty/required/format checks and EPC byte packing for the form.
-/// Does not enforce CareHR business rules (verify/register/etc.).
-/// </summary>
 internal static class UiInputHelper
 {
     public static bool TryParsePositiveInt(string? text, out int value)

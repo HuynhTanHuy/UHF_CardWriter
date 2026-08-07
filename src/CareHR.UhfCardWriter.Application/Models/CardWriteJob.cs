@@ -20,7 +20,6 @@ public enum CardWriteJobStage
 /// <summary>Operator snapshot for one write-card job (reader already connected).</summary>
 public sealed class CardWriteJobRequest
 {
-    /// <summary>Initializes a write-card job request.</summary>
     public CardWriteJobRequest(
         CardIdentity intendedIdentity,
         byte[] accessPassword,
@@ -37,29 +36,22 @@ public sealed class CardWriteJobRequest
         ScanTimeoutMs = scanTimeoutMs;
     }
 
-    /// <summary>Gets the intended CareHR identity to write.</summary>
     public CardIdentity IntendedIdentity { get; }
 
-    /// <summary>Gets the access password.</summary>
     public byte[] AccessPassword { get; }
 
-    /// <summary>Gets the CareHR hospital id for registry.</summary>
     public string HospitalId { get; }
 
-    /// <summary>Gets the CareHR card type id for registry.</summary>
     public string CardTypeId { get; }
 
-    /// <summary>Gets the CareHR batch code for registry.</summary>
     public string BatchCode { get; }
 
-    /// <summary>Gets the scan window timeout (ms).</summary>
     public ushort ScanTimeoutMs { get; }
 }
 
 /// <summary>End-to-end result of a write-card job.</summary>
 public sealed class CardWriteJobResult
 {
-    /// <summary>Initializes a job result.</summary>
     public CardWriteJobResult(
         bool success,
         CardWriteJobStage stage,
@@ -78,28 +70,20 @@ public sealed class CardWriteJobResult
         RegistrationResult = registrationResult;
     }
 
-    /// <summary>Gets whether the job completed fully (write + verify + register).</summary>
     public bool Success { get; }
 
-    /// <summary>Gets the stage reached or failed.</summary>
     public CardWriteJobStage Stage { get; }
 
-    /// <summary>Gets the Application error code.</summary>
     public DeviceErrorCode ErrorCode { get; }
 
-    /// <summary>Gets a human-readable message.</summary>
     public string Message { get; }
 
-    /// <summary>Gets the scanned card when available.</summary>
     public CardInformation? ScannedCard { get; }
 
-    /// <summary>Gets the verify result when available.</summary>
     public CardVerifyResult? VerifyResult { get; }
 
-    /// <summary>Gets the registration result when available.</summary>
     public RegistrationResult? RegistrationResult { get; }
 
-    /// <summary>Creates a full success result.</summary>
     public static CardWriteJobResult Complete(
         CardInformation scanned,
         CardVerifyResult verify,
@@ -113,7 +97,6 @@ public sealed class CardWriteJobResult
             verify,
             registration);
 
-    /// <summary>Creates a written-but-unregistered result (API fail after verify).</summary>
     public static CardWriteJobResult WrittenUnregistered(
         CardInformation scanned,
         CardVerifyResult verify,
@@ -127,7 +110,6 @@ public sealed class CardWriteJobResult
             verify,
             registration);
 
-    /// <summary>Creates a failed job result at a stage.</summary>
     public static CardWriteJobResult Fail(
         CardWriteJobStage stage,
         DeviceErrorCode errorCode,
@@ -136,7 +118,6 @@ public sealed class CardWriteJobResult
         CardVerifyResult? verify = null) =>
         new(false, stage, errorCode, message, scanned, verify);
 
-    /// <summary>Creates a cancelled job result.</summary>
     public static CardWriteJobResult Cancelled(string message = "Operation cancelled.") =>
         new(false, CardWriteJobStage.Cancelled, DeviceErrorCode.None, message);
 }

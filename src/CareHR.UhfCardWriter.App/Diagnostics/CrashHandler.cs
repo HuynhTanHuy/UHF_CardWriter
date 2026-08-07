@@ -2,7 +2,6 @@ using System.Text;
 
 namespace CareHR.UhfCardWriter.App.Diagnostics;
 
-/// <summary>Registers global crash handlers and writes crash reports under LocalAppData.</summary>
 internal static class CrashHandler
 {
     private static int _wired;

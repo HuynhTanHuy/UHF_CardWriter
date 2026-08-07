@@ -12,7 +12,6 @@ public sealed class CardScanningService
     private readonly ICardConnection _connection;
     private readonly ICardScanner _scanner;
 
-    /// <summary>Initializes a new <see cref="CardScanningService"/>.</summary>
     public CardScanningService(ICardConnection connection, ICardScanner scanner)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));

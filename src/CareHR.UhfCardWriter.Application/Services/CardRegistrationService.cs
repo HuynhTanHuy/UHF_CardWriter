@@ -12,7 +12,6 @@ public sealed class CardRegistrationService
 {
     private readonly ICardRegistrar _registrar;
 
-    /// <summary>Initializes a new <see cref="CardRegistrationService"/>.</summary>
     public CardRegistrationService(ICardRegistrar registrar)
     {
         _registrar = registrar ?? throw new ArgumentNullException(nameof(registrar));

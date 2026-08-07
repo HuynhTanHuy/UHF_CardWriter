@@ -3,9 +3,6 @@ using CareHR.UhfCardWriter.Application.Exceptions;
 
 namespace CareHR.UhfCardWriter.Application.Services;
 
-/// <summary>
-/// Shared Application validation helpers for CareHR card services.
-/// </summary>
 internal static class CardValidation
 {
     public static void EnsureConnected(bool isOpen)

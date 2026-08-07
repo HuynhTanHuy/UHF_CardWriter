@@ -1,6 +1,5 @@
 namespace CareHR.UhfCardWriter.App.Diagnostics;
 
-/// <summary>Maps technical failures to short operator-facing messages (no stack / native codes).</summary>
 internal static class UserMessage
 {
     public static string ForException(Exception ex)

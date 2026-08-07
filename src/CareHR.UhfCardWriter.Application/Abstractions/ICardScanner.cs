@@ -1,4 +1,5 @@
 using CareHR.UhfCardWriter.Application.Devices;
+using CareHR.UhfCardWriter.Application.Models;
 
 namespace CareHR.UhfCardWriter.Application.Abstractions;
 
@@ -11,13 +12,12 @@ public interface ICardScanner
     /// <summary>Starts RF scanning (single continue command).</summary>
     DeviceResult StartScan(byte invCount = 0, uint invParam = 0);
 
-    /// <summary>Stops RF scanning.</summary>
     DeviceResult StopScan(ushort timeoutMs = DeviceConstants.DefaultInventoryStopTimeoutMs);
 
     /// <summary>Tries to obtain one card from the field (single poll).</summary>
     DeviceResult<CardInformation> TryGetCard(ushort timeoutMs);
 
-    /// <summary>Selects a card by its identity (EPC mask) for subsequent access.</summary>
+    /// <summary>Selects a card by identity (EPC mask) for subsequent access.</summary>
     /// <param name="identity">Card identity whose EPC bytes form the select mask.</param>
     DeviceResult SelectByIdentity(CardIdentity identity);
 }

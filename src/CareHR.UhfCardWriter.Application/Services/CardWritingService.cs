@@ -12,14 +12,12 @@ public sealed class CardWritingService
     private readonly ICardConnection _connection;
     private readonly ICardWriter _writer;
 
-    /// <summary>Initializes a new <see cref="CardWritingService"/>.</summary>
     public CardWritingService(ICardConnection connection, ICardWriter writer)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
     }
 
-    /// <summary>Writes the intended identity to the physical card.</summary>
     public DeviceResult<CardWriteResult> WriteIdentity(CardWriteRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);

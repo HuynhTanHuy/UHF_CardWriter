@@ -13,7 +13,6 @@ namespace CareHR.UhfCardWriter.Infrastructure.Registration;
 /// <remarks>No business rules — Application enforces verify-before-register. No SDK types.</remarks>
 public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
 {
-    /// <summary>CamelCase JSON matching CareHR API / browser payload.</summary>
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -23,13 +22,11 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
     private readonly HttpClient _http;
     private readonly bool _ownsHttp;
 
-    /// <summary>Creates an adapter with a dedicated <see cref="HttpClient"/>.</summary>
     public HttpCardRegistrarAdapter(CareHrCardApiOptions options)
         : this(options, new HttpClient(), ownsHttp: true)
     {
     }
 
-    /// <summary>Creates an adapter using a provided <see cref="HttpClient"/>.</summary>
     public HttpCardRegistrarAdapter(CareHrCardApiOptions options, HttpClient httpClient)
         : this(options, httpClient, ownsHttp: false)
     {
@@ -162,10 +159,6 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
         return text[..(max - 3)] + "...";
     }
 
-    /// <summary>
-    /// CareHR stores human-readable <c>rfidCardNumber</c>.
-    /// When EPC bytes are printable ASCII, decode them; otherwise send uppercase hex.
-    /// </summary>
     private static string ResolveCardNumber(CardIdentity identity)
     {
         var bytes = identity.Epc;
@@ -205,11 +198,6 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
         return "Bearer " + token;
     }
 
-    /// <summary>
-    /// Wire DTO for <c>POST /api/rfid/cards</c>.
-    /// Property names serialize to camelCase via <see cref="JsonOptions"/>.
-    /// Explicit names avoid <c>RFID…</c> → <c>rFID…</c> camelCase quirks.
-    /// </summary>
     private sealed class CreateRfidCardBody
     {
         public Guid HospitalId { get; set; }

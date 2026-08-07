@@ -2,7 +2,6 @@ using CareHR.UhfCardWriter.App.Configuration;
 
 namespace CareHR.UhfCardWriter.App.Diagnostics;
 
-/// <summary>Startup configuration checks (no business rules).</summary>
 internal static class ConfigurationValidator
 {
     public sealed record Finding(string Code, string Severity, string Message);

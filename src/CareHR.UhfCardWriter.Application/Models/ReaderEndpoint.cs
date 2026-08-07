@@ -18,7 +18,6 @@ public sealed class ReaderEndpoint
         Kind = kind;
     }
 
-    /// <summary>Gets the connection kind.</summary>
     public ReaderConnectionKind Kind { get; }
 
     /// <summary>COM port name when <see cref="Kind"/> is Serial.</summary>
@@ -39,7 +38,6 @@ public sealed class ReaderEndpoint
     /// <summary>Connect timeout (ms) when <see cref="Kind"/> is Network.</summary>
     public int NetworkTimeoutMs { get; private init; }
 
-    /// <summary>Creates a serial endpoint.</summary>
     public static ReaderEndpoint Serial(string comPort, int baudRate) =>
         new(ReaderConnectionKind.Serial)
         {
@@ -47,11 +45,9 @@ public sealed class ReaderEndpoint
             BaudRate = baudRate,
         };
 
-    /// <summary>Creates a USB HID endpoint.</summary>
     public static ReaderEndpoint UsbHid(ushort index) =>
         new(ReaderConnectionKind.UsbHid) { UsbIndex = index };
 
-    /// <summary>Creates a network endpoint.</summary>
     public static ReaderEndpoint Network(string ipAddress, ushort port, int timeoutMs) =>
         new(ReaderConnectionKind.Network)
         {

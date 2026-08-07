@@ -17,7 +17,6 @@ public sealed class CardWriteOrchestrator
     private readonly CardVerificationService _verificationService;
     private readonly CardRegistrationService _registrationService;
 
-    /// <summary>Initializes a new <see cref="CardWriteOrchestrator"/>.</summary>
     public CardWriteOrchestrator(
         CardConnectionService connectionService,
         CardScanningService scanningService,

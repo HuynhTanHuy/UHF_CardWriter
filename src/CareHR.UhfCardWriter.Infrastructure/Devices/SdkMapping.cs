@@ -10,9 +10,6 @@ using SdkTagReadData = CareHR.UhfCardWriter.Sdk.Models.TagReadData;
 
 namespace CareHR.UhfCardWriter.Infrastructure.Devices;
 
-/// <summary>
-/// Maps SDK Wrapper results/models to Application card-domain types.
-/// </summary>
 internal static class SdkMapping
 {
     /// <summary>Gen2 EPC/UII bank — Infrastructure-only; not exposed to Application.</summary>

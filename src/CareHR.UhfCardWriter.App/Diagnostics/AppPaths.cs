@@ -1,6 +1,5 @@
 namespace CareHR.UhfCardWriter.App.Diagnostics;
 
-/// <summary>Well-known folders under LocalAppData for logs, crashes, and exports.</summary>
 internal static class AppPaths
 {
     public static string Root { get; } = Path.Combine(

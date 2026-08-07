@@ -6,9 +6,6 @@ using CareHR.UhfCardWriter.Application.Services;
 
 namespace CareHR.UhfCardWriter.App.Forms;
 
-/// <summary>
-/// Support / About / Health / Export dialog. Does not change main UI layout.
-/// </summary>
 internal sealed class SupportForm : Form
 {
     private readonly AppSettings _settings;

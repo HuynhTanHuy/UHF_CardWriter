@@ -8,13 +8,8 @@ namespace CareHR.UhfCardWriter.Application.DependencyInjection;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
-    /// <summary>
-    /// Adds Application Services and the write-card orchestrator.
-    /// </summary>
-    /// <remarks>
-    /// Lifetime: Singleton — matches Infrastructure single reader session; callers must serialize device access.
-    /// Does not register ports; call Infrastructure <c>AddUhfInfrastructure</c> from the composition root.
-    /// </remarks>
+    /// <summary>Registers Application Services (singleton; serialize device access).</summary>
+    /// <remarks>Does not register ports — call Infrastructure <c>AddUhfInfrastructure</c> from the composition root.</remarks>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);

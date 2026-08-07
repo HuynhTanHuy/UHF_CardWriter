@@ -5,7 +5,6 @@ namespace CareHR.UhfCardWriter.Application.Devices;
 /// </summary>
 public sealed class CardWriteResult
 {
-    /// <summary>Initializes a write result.</summary>
     public CardWriteResult(
         byte status,
         byte antenna,
@@ -20,18 +19,13 @@ public sealed class CardWriteResult
         Code = code ?? Array.Empty<byte>();
     }
 
-    /// <summary>Gets the device status byte from the access response.</summary>
     public byte Status { get; }
 
-    /// <summary>Gets the antenna id.</summary>
     public byte Antenna { get; }
 
-    /// <summary>Gets CRC bytes.</summary>
     public byte[] Crc { get; }
 
-    /// <summary>Gets PC bytes.</summary>
     public byte[] Pc { get; }
 
-    /// <summary>Gets code/identity bytes returned in the access response.</summary>
     public byte[] Code { get; }
 }

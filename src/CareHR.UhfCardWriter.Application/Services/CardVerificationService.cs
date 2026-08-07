@@ -10,7 +10,6 @@ public sealed class CardVerificationService
 {
     private readonly CardReadingService _readingService;
 
-    /// <summary>Initializes a new <see cref="CardVerificationService"/>.</summary>
     public CardVerificationService(CardReadingService readingService)
     {
         _readingService = readingService ?? throw new ArgumentNullException(nameof(readingService));

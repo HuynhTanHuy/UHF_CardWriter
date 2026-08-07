@@ -69,7 +69,6 @@ public sealed class WorkflowProgressControl : UserControl
         RefreshStyles();
     }
 
-    /// <summary>Sets active step index 0..5 (-1 = none).</summary>
     public void SetActiveStep(int index)
     {
         _activeIndex = index;

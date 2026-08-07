@@ -3,7 +3,6 @@ using CareHR.UhfCardWriter.Application.Services;
 
 namespace CareHR.UhfCardWriter.App.Diagnostics;
 
-/// <summary>Runtime health probes for Support mode (no business logic).</summary>
 internal static class HealthChecker
 {
     public sealed record Check(string Name, bool Ready, string Detail);

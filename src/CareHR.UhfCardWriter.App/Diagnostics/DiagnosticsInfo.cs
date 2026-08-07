@@ -4,7 +4,6 @@ using CareHR.UhfCardWriter.App.Configuration;
 
 namespace CareHR.UhfCardWriter.App.Diagnostics;
 
-/// <summary>Static environment / version facts for About and diagnostics export.</summary>
 internal static class DiagnosticsInfo
 {
     public static string ApplicationName => "CareHR UHF Card Writer";

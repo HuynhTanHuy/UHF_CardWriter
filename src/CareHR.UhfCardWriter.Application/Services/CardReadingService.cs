@@ -12,7 +12,6 @@ public sealed class CardReadingService
     private readonly ICardConnection _connection;
     private readonly ICardReader _reader;
 
-    /// <summary>Initializes a new <see cref="CardReadingService"/>.</summary>
     public CardReadingService(ICardConnection connection, ICardReader reader)
     {
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
@@ -42,9 +41,6 @@ public sealed class CardReadingService
         }
     }
 
-    /// <summary>
-    /// Reads EPC bytes and returns them as <see cref="CardIdentity"/>.
-    /// </summary>
     public DeviceResult<CardIdentity> ReadCardIdentity(byte[] accessPassword, byte wordCount)
     {
         var read = ReadIdentity(accessPassword, wordCount);

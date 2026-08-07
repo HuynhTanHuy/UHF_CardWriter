@@ -3,10 +3,6 @@ using System.Text.RegularExpressions;
 
 namespace CareHR.UhfCardWriter.App.Diagnostics;
 
-/// <summary>
-/// Simple file + memory logger for Presentation/host.
-/// Never writes Bearer tokens, passwords, or native buffers.
-/// </summary>
 internal static class AppLog
 {
     private static readonly object Gate = new();
