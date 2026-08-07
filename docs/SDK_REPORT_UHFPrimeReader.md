@@ -415,8 +415,8 @@ GB protocol / IAP / TEST macros trong header: **không** map sang DllImport Phas
 
 Phase 3 khóa Driver bằng tài liệu contract/ADR (không thay thế báo cáo SDK này):
 
-- `docs/ArchitectureReadinessReview.md` — gate Phase 3 → Phase 4  
-- `docs/DriverContract.md`, `ExceptionPolicy.md`, `MarshalGuideline.md`, `NativeBufferPolicy.md`, `ValidationMatrix.md`, `ThreadSafety.md`, `ResourceLifetime.md`  
+- `docs/Architecture.md` — gate Phase 3 → Phase 4 (see also [archive/ArchitectureReadinessReview.md](archive/ArchitectureReadinessReview.md))  
+- Living driver docs: [Driver.md](Driver.md); historical detail under `docs/archive/` (`DriverContract`, `ExceptionPolicy`, `MarshalGuideline`, …)  
 - `docs/adr/ADR-001` … `ADR-005`  
 
 Binary/header facts trong báo cáo này vẫn là nguồn sự thật cho Native Layer.
