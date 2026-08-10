@@ -238,18 +238,41 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
         ThrowIfDisposed();
         try
         {
-            var write = _driver.WriteTag(option, accessPassword, (byte)memBank, wordPtr, writeData);
+            var dataLen = writeData is null ? 0 : writeData.Length;
+            var pwdLen = accessPassword is null ? 0 : accessPassword.Length;
+            var dataHex = writeData is null || writeData.Length == 0
+                ? "(empty)"
+                : Convert.ToHexString(writeData);
+            WriteDiag(
+                $"[Write] WriteTagStart Option={option} Bank={memBank} WordPtr={wordPtr} " +
+                $"DataLength={dataLen} DataHex={dataHex} " +
+                $"PasswordPresent={(pwdLen > 0)} PasswordLength={pwdLen} Timeout={responseTimeoutMs}");
+
+            var write = _driver.WriteTag(option, accessPassword!, (byte)memBank, wordPtr, writeData!);
+            WriteDiag(
+                $"[Write] WriteTagResult Status=0x{write.StatusCode:X8} Success={write.Success} Message={write.Message}");
             if (!write.Success)
+            {
+                WriteDiag($"[Write] FinalWriteResult=FAIL at WriteTag Status=0x{write.StatusCode:X8}");
                 return Fail<TagAccessResponse>(write.StatusCode, write.Message);
+            }
 
+            WriteDiag($"[Write] GetTagRespStart Command=0x{NativeConstants.IsoWriteTag:X4} Timeout={responseTimeoutMs}");
             var resp = _driver.GetTagResp(NativeConstants.IsoWriteTag, responseTimeoutMs);
+            WriteDiag(
+                $"[Write] GetTagRespResult Status=0x{resp.StatusCode:X8} Success={resp.Success} Message={resp.Message}");
             if (!resp.Success || resp.Value is null)
+            {
+                WriteDiag($"[Write] FinalWriteResult=FAIL at GetTagResp Status=0x{resp.StatusCode:X8}");
                 return Fail<TagAccessResponse>(resp.StatusCode, resp.Message);
+            }
 
+            WriteDiag($"[Write] FinalWriteResult=OK Status=0x{resp.StatusCode:X8}");
             return Ok(resp.StatusCode, resp.Message, ToTagAccessResponse(resp.Value));
         }
         catch (NativeException ex)
         {
+            WriteDiag($"[Write] FinalWriteResult=EXCEPTION {ex.Message}");
             throw new SdkException(ex.Message, ex);
         }
     }
@@ -268,19 +291,45 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
         ThrowIfDisposed();
         try
         {
-            var read = _driver.ReadTag(option, accessPassword, (byte)memBank, wordPtr, wordCount);
+            var pwdLen = accessPassword is null ? 0 : accessPassword.Length;
+            WriteDiag(
+                $"[Verify] ReadTagStart Option={option} Bank={memBank} WordPtr={wordPtr} " +
+                $"WordCount={wordCount} PasswordPresent={(pwdLen > 0)} PasswordLength={pwdLen} Timeout={responseTimeoutMs}");
+
+            var read = _driver.ReadTag(option, accessPassword!, (byte)memBank, wordPtr, wordCount);
+            WriteDiag(
+                $"[Verify] ReadTagResult Status=0x{read.StatusCode:X8} Success={read.Success} Message={read.Message}");
             if (!read.Success)
+            {
+                WriteDiag($"[Verify] FailAt=ReadTag Status=0x{read.StatusCode:X8}");
                 return Fail<TagReadData>(read.StatusCode, read.Message);
+            }
 
             var maxBytes = Math.Max(wordCount * 2, 2);
+            // IsoReadTag=0x0003 is the Gen2 read command id (GetReadTagResp is the dedicated poll API).
+            WriteDiag(
+                $"[Verify] GetReadTagRespStart Command=0x{NativeConstants.IsoReadTag:X4} " +
+                $"Timeout={responseTimeoutMs} MaxBytes={maxBytes}");
             var resp = _driver.GetReadTagResp(responseTimeoutMs, maxBytes);
+            WriteDiag(
+                $"[Verify] GetReadTagRespResult Status=0x{resp.StatusCode:X8} Success={resp.Success} Message={resp.Message}");
             if (!resp.Success || resp.Value is null)
+            {
+                WriteDiag($"[Verify] FailAt=GetReadTagResp Status=0x{resp.StatusCode:X8}");
                 return Fail<TagReadData>(resp.StatusCode, resp.Message);
+            }
 
+            var dataLen = resp.Value.Data?.Length ?? 0;
+            var dataHex = dataLen == 0 || resp.Value.Data is null
+                ? "(empty)"
+                : Convert.ToHexString(resp.Value.Data);
+            WriteDiag($"[Verify] ReadDataLength={dataLen} ReadDataHex={dataHex}");
+            WriteDiag("[Verify] FailAt=NONE ReadPath=OK");
             return Ok(resp.StatusCode, resp.Message, ToTagReadData(resp.Value));
         }
         catch (NativeException ex)
         {
+            WriteDiag($"[Verify] FailAt=EXCEPTION {ex.Message}");
             throw new SdkException(ex.Message, ex);
         }
     }
@@ -293,10 +342,18 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
         ThrowIfDisposed();
         try
         {
-            return Map(_driver.SetSelectMask(maskPtr, maskBits, mask));
+            var factoryEpc = mask is null || mask.Length == 0 ? "UNKNOWN" : Convert.ToHexString(mask);
+            WriteDiag(
+                $"[Write] SelectStart FactoryEpc={factoryEpc} FactoryEpcLength={(mask?.Length ?? 0)} " +
+                $"MaskPtr={maskPtr} MaskBits={maskBits}");
+            var result = _driver.SetSelectMask(maskPtr, maskBits, mask!);
+            WriteDiag(
+                $"[Write] SelectResult Status=0x{result.StatusCode:X8} Success={result.Success} Message={result.Message}");
+            return Map(result);
         }
         catch (NativeException ex)
         {
+            WriteDiag($"[Write] SelectResult EXCEPTION {ex.Message}");
             throw new SdkException(ex.Message, ex);
         }
     }
@@ -345,6 +402,30 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
     }
 
     // ----------------- Mapping -----------------
+
+    /// <summary>
+    /// Temporary Write-path diagnostic (Select / WriteTag / GetTagResp). Does not change algorithm.
+    /// Writes to %LocalAppData%\CareHR\UhfCardWriter\logs\write-diag.log — never logs password bytes.
+    /// </summary>
+    private static void WriteDiag(string message)
+    {
+        try
+        {
+            var dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "CareHR",
+                "UhfCardWriter",
+                "logs");
+            Directory.CreateDirectory(dir);
+            var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}\t{message}";
+            File.AppendAllText(Path.Combine(dir, "write-diag.log"), line + Environment.NewLine);
+            System.Diagnostics.Trace.WriteLine(line);
+        }
+        catch
+        {
+            // Diagnostic only — never fail Write because of logging.
+        }
+    }
 
     private void ThrowIfDisposed()
     {
