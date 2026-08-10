@@ -62,6 +62,10 @@ internal static class UhfPrimeNative
     [DllImport(Dll, EntryPoint = "GetDevicePara", CallingConvention = CallingConvention.Winapi, ExactSpelling = true, SetLastError = false)]
     internal static extern int GetDevicePara(IntPtr hComm, out NativeDevicePara devInfo);
 
+    /// <summary>CFApi.h: int SetDevicePara(int64_t hComm, DevicePara devInfo);</summary>
+    [DllImport(Dll, EntryPoint = "SetDevicePara", CallingConvention = CallingConvention.Winapi, ExactSpelling = true, SetLastError = false)]
+    internal static extern int SetDevicePara(IntPtr hComm, NativeDevicePara devInfo);
+
     /// <summary>CFApi.h: int SetRFPower(int64_t hComm, unsigned char power, unsigned char reserved);</summary>
     [DllImport(Dll, EntryPoint = "SetRFPower", CallingConvention = CallingConvention.Winapi, ExactSpelling = true, SetLastError = false)]
     internal static extern int SetRFPower(IntPtr hComm, byte power, byte reserved);

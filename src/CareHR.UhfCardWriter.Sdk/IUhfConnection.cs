@@ -41,4 +41,10 @@ public interface IUhfConnection
     /// <param name="capacity">String buffer capacity.</param>
     /// <returns>SDK result with info string.</returns>
     SdkResult<string> GetUsbDeviceInfo(ushort index, int capacity = SdkConstants.DefaultUsbInfoCapacity);
+
+    /// <summary>Reads the full vendor <c>DevicePara</c> block.</summary>
+    SdkResult<DeviceParameters> GetDevicePara();
+
+    /// <summary>Writes the full vendor <c>DevicePara</c> block.</summary>
+    SdkResult SetDevicePara(DeviceParameters para);
 }

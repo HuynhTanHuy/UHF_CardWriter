@@ -1,0 +1,14 @@
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\bin\x86\Debug\net8.0\UHFPrimeReader.dll
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\bin\x86\Debug\net8.0\hidapi.dll
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\bin\x86\Debug\net8.0\CareHR.UhfCardWriter.Sdk.deps.json
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\bin\x86\Debug\net8.0\CareHR.UhfCardWriter.Sdk.dll
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\bin\x86\Debug\net8.0\CareHR.UhfCardWriter.Sdk.pdb
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\obj\x86\Debug\net8.0\CareHR.UhfCardWriter.Sdk.GeneratedMSBuildEditorConfig.editorconfig
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\obj\x86\Debug\net8.0\CareHR.UhfCardWriter.Sdk.AssemblyInfoInputs.cache
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\obj\x86\Debug\net8.0\CareHR.UhfCardWriter.Sdk.AssemblyInfo.cs
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\obj\x86\Debug\net8.0\CareHR.UhfCardWriter.Sdk.csproj.CoreCompileInputs.cache
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\obj\x86\Debug\net8.0\CareHR.UhfCardWriter.Sdk.sourcelink.json
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\obj\x86\Debug\net8.0\CareHR.UhfCardWriter.Sdk.dll
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\obj\x86\Debug\net8.0\refint\CareHR.UhfCardWriter.Sdk.dll
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\obj\x86\Debug\net8.0\CareHR.UhfCardWriter.Sdk.pdb
+D:\CAREHR\CareHR.UhfCardWriter\src\CareHR.UhfCardWriter.Sdk\obj\x86\Debug\net8.0\ref\CareHR.UhfCardWriter.Sdk.dll

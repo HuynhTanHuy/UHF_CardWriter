@@ -225,9 +225,11 @@ public sealed partial class MainForm : Form
             }
 
             LogOp("Connect", "Reader connected.");
+            LogNativeRuntimeDiagnostics();
             SetConnectButtonText(connected: true);
             SetUiState(UiState.Ready, "Reader connected. Set range and press Start.");
             RefreshConnectionChrome();
+            LoadOutInterfaceAfterConnect();
         }
         catch (Exception ex)
         {
@@ -241,6 +243,135 @@ public sealed partial class MainForm : Form
         {
             SetBusy(false);
         }
+    }
+
+    private async void BtnGetOutInterface_Click(object? sender, EventArgs e)
+    {
+        if (_busy || _batchRunning || !_connectionService.IsConnected)
+            return;
+
+        SetBusy(true);
+        try
+        {
+            var result = await Task.Run(() => _connectionService.GetOutInterface()).ConfigureAwait(true);
+            if (!result.Success)
+            {
+                LogOp("Get Out Interface", UserMessage.ForDeviceOrOperation(result.Message));
+                return;
+            }
+
+            var raw = result.Value;
+            var name = DeviceConstants.FormatOutInterface(raw);
+            ApplyOutInterfaceSelection(raw);
+            LogOp("Get Out Interface", $"Raw={raw} Name={name}");
+            AppLog.Info("DevicePara", $"InterfaceRaw={raw} Interface={name}");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Presentation", "Get Out Interface failed", ex);
+            LogOp("Get Out Interface", UserMessage.ForException(ex));
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private async void BtnSetOutInterface_Click(object? sender, EventArgs e)
+    {
+        if (_busy || _batchRunning || !_connectionService.IsConnected)
+            return;
+
+        if (cboOutInterface.SelectedItem is not OutInterfaceListItem selected)
+        {
+            MessageBox.Show(this, "Select an Out Interface value.", "Out Interface", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        SetBusy(true);
+        try
+        {
+            var fromResult = await Task.Run(() => _connectionService.GetOutInterface()).ConfigureAwait(true);
+            var fromRaw = fromResult.Success ? fromResult.Value : (byte)0;
+            var fromName = DeviceConstants.FormatOutInterface(fromRaw);
+            var toRaw = selected.Raw;
+            var toName = selected.Name;
+
+            var set = await Task.Run(() => _connectionService.SetOutInterface(toRaw)).ConfigureAwait(true);
+            if (!set.Success)
+            {
+                LogOp("Set Out Interface", $"failed: {UserMessage.ForDeviceOrOperation(set.Message)}");
+                return;
+            }
+
+            var verified = set.Value;
+            var verifiedName = DeviceConstants.FormatOutInterface(verified);
+            ApplyOutInterfaceSelection(verified);
+            LogOp(
+                "Set Out Interface",
+                $"From={fromRaw} {fromName} To={toRaw} {toName} SetDevicePara=OK Verify={verified} {verifiedName}");
+            AppLog.Info("DevicePara", $"InterfaceRaw={verified} Interface={verifiedName}");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Presentation", "Set Out Interface failed", ex);
+            LogOp("Set Out Interface", UserMessage.ForException(ex));
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private async void LoadOutInterfaceAfterConnect()
+    {
+        try
+        {
+            var result = await Task.Run(() => _connectionService.GetOutInterface()).ConfigureAwait(true);
+            if (!result.Success)
+            {
+                LogOp("Get Out Interface", UserMessage.ForDeviceOrOperation(result.Message));
+                return;
+            }
+
+            var raw = result.Value;
+            var name = DeviceConstants.FormatOutInterface(raw);
+            ApplyOutInterfaceSelection(raw);
+            LogOp("Get Out Interface", $"Raw={raw} Name={name}");
+            AppLog.Info("DevicePara", $"InterfaceRaw={raw} Interface={name}");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Presentation", "Load Out Interface failed", ex);
+            LogOp("Get Out Interface", UserMessage.ForException(ex));
+        }
+    }
+
+    private void ApplyOutInterfaceSelection(byte raw)
+    {
+        var items = cboOutInterface.Items.Cast<OutInterfaceListItem>().ToList();
+        var match = items.Find(i => i.Raw == raw);
+        if (match is not null)
+        {
+            cboOutInterface.SelectedItem = match;
+            return;
+        }
+
+        // Unknown vendor value: keep combo unchanged but log name via FormatOutInterface.
+    }
+
+    private static void LogNativeRuntimeDiagnostics()
+    {
+        var uhf = DiagnosticsInfo.DescribeNativeDll("UHFPrimeReader.dll");
+        var hid = DiagnosticsInfo.DescribeNativeDll("hidapi.dll");
+        AppLog.Info(
+            "Connect",
+            $"Architecture={DiagnosticsInfo.ProcessArchitecture} " +
+            $"UHFPrimeReader={uhf.Path} Version={uhf.Version} Size={uhf.Size} Arch={uhf.Arch} SHA256={uhf.Sha256} " +
+            $"hidapi={hid.Path} Size={hid.Size} Arch={hid.Arch}");
+        AppLog.Info("Native", $"Loaded UHFPrimeReader: {uhf.Path}");
+        AppLog.Info("Native", $"Loaded hidapi: {hid.Path}");
+        AppLog.Info("Native", $"Architecture: {DiagnosticsInfo.ProcessArchitecture}");
     }
 
     private async void BtnStart_Click(object? sender, EventArgs e)
@@ -863,6 +994,10 @@ public sealed partial class MainForm : Form
         btnStart.Enabled = inputsEnabled;
         btnSettings.Enabled = inputsEnabled;
         btnStop.Enabled = true;
+        var outInterfaceEnabled = inputsEnabled && _connectionService.IsConnected;
+        cboOutInterface.Enabled = outInterfaceEnabled;
+        btnGetOutInterface.Enabled = outInterfaceEnabled;
+        btnSetOutInterface.Enabled = outInterfaceEnabled;
         txtCurrent.ReadOnly = true;
         txtCurrent.Enabled = true;
     }
@@ -885,5 +1020,18 @@ public sealed partial class MainForm : Form
         public string Display { get; }
         public ReaderEndpoint Endpoint { get; }
         public override string ToString() => Display;
+    }
+
+    internal sealed class OutInterfaceListItem
+    {
+        public OutInterfaceListItem(string name, byte raw)
+        {
+            Name = name;
+            Raw = raw;
+        }
+
+        public string Name { get; }
+        public byte Raw { get; }
+        public override string ToString() => Name;
     }
 }

@@ -1,4 +1,5 @@
 using System.Text;
+using CareHR.UhfCardWriter.Sdk.Models;
 using CareHR.UhfCardWriter.Sdk.Native;
 
 namespace CareHR.UhfCardWriter.Sdk.Driver;
@@ -115,6 +116,35 @@ public sealed class UhfPrimeDriver : IDisposable
         var status = UhfPrimeNative.CloseDevice(_handle);
         _handle = IntPtr.Zero;
         return NativeResult.FromStatus(status);
+    }
+
+    /// <summary>Reads the full vendor <c>DevicePara</c> block.</summary>
+    /// <returns><see cref="NativeResult{T}"/> with managed parameters on success.</returns>
+    /// <exception cref="NativeException">The reader handle is not open.</exception>
+    /// <exception cref="ObjectDisposedException">The driver has been disposed.</exception>
+    public NativeResult<DeviceParameters> GetDevicePara()
+    {
+        var handle = RequireHandle();
+        var status = UhfPrimeNative.GetDevicePara(handle, out var native);
+        if (status != NativeConstants.StatOk)
+            return NativeResult<DeviceParameters>.FromStatus(status);
+
+        return NativeResult<DeviceParameters>.Ok(MapDevicePara(native));
+    }
+
+    /// <summary>Writes the full vendor <c>DevicePara</c> block (by value, matching CFApi.h).</summary>
+    /// <param name="para">Complete parameter block; must not be null.</param>
+    /// <returns>SDK status as <see cref="NativeResult"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="para"/> is null.</exception>
+    /// <exception cref="NativeException">The reader handle is not open.</exception>
+    /// <exception cref="ObjectDisposedException">The driver has been disposed.</exception>
+    public NativeResult SetDevicePara(DeviceParameters para)
+    {
+        if (para is null)
+            throw new ArgumentNullException(nameof(para));
+
+        var handle = RequireHandle();
+        return NativeResult.FromStatus(UhfPrimeNative.SetDevicePara(handle, ToNative(para)));
     }
 
     /// <summary>Returns the number of USB HID reader devices.</summary>
@@ -470,6 +500,60 @@ public sealed class UhfPrimeDriver : IDisposable
         var pc = CopyBytes(native.Pc, 2);
         return new TagResponseNative(native.TagStatus, native.Antenna, crc, pc, code);
     }
+
+    private static DeviceParameters MapDevicePara(NativeDevicePara native) =>
+        new()
+        {
+            DeviceAddr = native.DeviceAddr,
+            RfidPro = native.RfidPro,
+            WorkMode = native.WorkMode,
+            Interface = native.Interface,
+            BaudRate = native.BaudRate,
+            WgSet = native.WgSet,
+            Ant = native.Ant,
+            Region = native.Region,
+            StartFreI = native.StartFreI,
+            StartFreD = native.StartFreD,
+            StepFre = native.StepFre,
+            Cn = native.Cn,
+            RfidPower = native.RfidPower,
+            InventoryArea = native.InventoryArea,
+            QValue = native.QValue,
+            Session = native.Session,
+            AcsAddr = native.AcsAddr,
+            AcsDataLen = native.AcsDataLen,
+            FilterTime = native.FilterTime,
+            TriggleTime = native.TriggleTime,
+            BuzzerTime = native.BuzzerTime,
+            InternalTime = native.InternalTime,
+        };
+
+    private static NativeDevicePara ToNative(DeviceParameters para) =>
+        new()
+        {
+            DeviceAddr = para.DeviceAddr,
+            RfidPro = para.RfidPro,
+            WorkMode = para.WorkMode,
+            Interface = para.Interface,
+            BaudRate = para.BaudRate,
+            WgSet = para.WgSet,
+            Ant = para.Ant,
+            Region = para.Region,
+            StartFreI = para.StartFreI,
+            StartFreD = para.StartFreD,
+            StepFre = para.StepFre,
+            Cn = para.Cn,
+            RfidPower = para.RfidPower,
+            InventoryArea = para.InventoryArea,
+            QValue = para.QValue,
+            Session = para.Session,
+            AcsAddr = para.AcsAddr,
+            AcsDataLen = para.AcsDataLen,
+            FilterTime = para.FilterTime,
+            TriggleTime = para.TriggleTime,
+            BuzzerTime = para.BuzzerTime,
+            InternalTime = para.InternalTime,
+        };
 
     private static byte[] CopyBytes(byte[]? source, int length)
     {

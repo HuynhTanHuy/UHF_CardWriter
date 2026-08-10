@@ -45,6 +45,17 @@ public static class CompositionRoot
         if (!DiagnosticsInfo.HidApiDllPresent)
             AppLog.Warn("Startup", "hidapi.dll missing next to EXE.");
 
+        var uhf = DiagnosticsInfo.DescribeNativeDll("UHFPrimeReader.dll");
+        var hid = DiagnosticsInfo.DescribeNativeDll("hidapi.dll");
+        AppLog.Info(
+            "Startup",
+            $"ProcessArch={DiagnosticsInfo.ProcessArchitecture} " +
+            $"UhfPrimeReaderArch={uhf.Arch} UhfPrimeReaderVersion={uhf.Version} UhfPrimeReaderSize={uhf.Size} SHA256={uhf.Sha256} " +
+            $"hidapiArch={hid.Arch} hidapiSize={hid.Size}");
+        AppLog.Info("Startup", $"Loaded UHFPrimeReader: {uhf.Path}");
+        AppLog.Info("Startup", $"Loaded hidapi: {hid.Path}");
+        AppLog.Info("Startup", $"Architecture: {DiagnosticsInfo.ProcessArchitecture}");
+
         services.AddCareHrCardWriter(api =>
         {
             api.BaseUrl = settings.Api.BaseUrl;

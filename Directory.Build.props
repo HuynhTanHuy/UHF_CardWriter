@@ -1,18 +1,17 @@
 <Project>
   <PropertyGroup>
-    <!-- Phase 1: lock all projects to x64 to match UHF Desk Reader SDK API\x64 -->
-    <Platforms>x64</Platforms>
-    <Platform>x64</Platform>
-    <PlatformTarget>x64</PlatformTarget>
+    <!-- Lock all projects to x86 to match vendor Form1 + UHF Desk Reader SDK Sample x86 stack -->
+    <Platforms>x86</Platforms>
+    <Platform>x86</Platform>
+    <PlatformTarget>x86</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <!-- RID only on the WinForms host so native DLLs resolve next to a win-x64 process -->
+  <!-- RID only on the WinForms host so native DLLs resolve next to a win-x86 process -->
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'CareHR.UhfCardWriter.App'">
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
   </PropertyGroup>
 </Project>
-

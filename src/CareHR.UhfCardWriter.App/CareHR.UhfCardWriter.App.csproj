@@ -44,7 +44,7 @@
     <ApplicationIcon>Assets\carehr-logo.ico</ApplicationIcon>
   </PropertyGroup>
 
-  <!-- Native DLLs must sit next to the WinForms executable (from SDK API\x64). -->
+  <!-- Native DLLs must sit next to the WinForms executable (vendor Form1 x86 stack). -->
   <ItemGroup>
     <None Include="..\CareHR.UhfCardWriter.Sdk\Native\UHFPrimeReader.dll"
           Link="UHFPrimeReader.dll"

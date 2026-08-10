@@ -1,5 +1,6 @@
 using CareHR.UhfCardWriter.App.Controls;
 using CareHR.UhfCardWriter.App.Presentation;
+using CareHR.UhfCardWriter.Application.Devices;
 
 namespace CareHR.UhfCardWriter.App.Forms;
 
@@ -20,6 +21,10 @@ partial class MainForm
     private Control lblReader = null!;
     private ComboBox cboReader = null!;
     private Label lblReaderStatus = null!;
+    private Control lblOutInterface = null!;
+    private ComboBox cboOutInterface = null!;
+    private Button btnGetOutInterface = null!;
+    private Button btnSetOutInterface = null!;
     private Control lblHospital = null!;
     private ComboBox cboHospital = null!;
     private Control lblCardType = null!;
@@ -260,12 +265,12 @@ partial class MainForm
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 10,
+            RowCount = 11,
             Padding = new Padding(14, 14, 14, 10),
         };
         leftLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 118));
         leftLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-        for (var i = 0; i < 7; i++)
+        for (var i = 0; i < 8; i++)
             leftLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
         leftLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));
         leftLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
@@ -295,30 +300,79 @@ partial class MainForm
         leftLayout.Controls.Add(lblReader, 0, 0);
         leftLayout.Controls.Add(readerRow, 1, 0);
 
+        lblOutInterface = CreateFieldLabel(UiGlyphs.Reader, "Out Interface");
+        var outInterfaceRow = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 3,
+            RowCount = 1,
+            Margin = new Padding(0, 4, 0, 4),
+        };
+        outInterfaceRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        outInterfaceRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 56));
+        outInterfaceRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 56));
+        cboOutInterface = CreateCombo();
+        cboOutInterface.DropDownStyle = ComboBoxStyle.DropDownList;
+        cboOutInterface.DisplayMember = nameof(OutInterfaceListItem.Name);
+        cboOutInterface.ValueMember = nameof(OutInterfaceListItem.Raw);
+        cboOutInterface.DataSource = DeviceConstants.OutInterfaceOptions
+            .Select(o => new OutInterfaceListItem(o.Name, o.Raw))
+            .ToList();
+        cboOutInterface.Enabled = false;
+        btnGetOutInterface = new Button
+        {
+            Text = "Get",
+            Dock = DockStyle.Fill,
+            Margin = new Padding(4, 0, 0, 0),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = UiColors.FieldFill,
+            ForeColor = UiColors.TextPrimary,
+            Enabled = false,
+        };
+        btnGetOutInterface.FlatAppearance.BorderColor = UiColors.Border;
+        btnGetOutInterface.Click += BtnGetOutInterface_Click;
+        btnSetOutInterface = new Button
+        {
+            Text = "Set",
+            Dock = DockStyle.Fill,
+            Margin = new Padding(4, 0, 0, 0),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = UiColors.CareHrBlue,
+            ForeColor = Color.White,
+            Enabled = false,
+        };
+        btnSetOutInterface.FlatAppearance.BorderSize = 0;
+        btnSetOutInterface.Click += BtnSetOutInterface_Click;
+        outInterfaceRow.Controls.Add(cboOutInterface, 0, 0);
+        outInterfaceRow.Controls.Add(btnGetOutInterface, 1, 0);
+        outInterfaceRow.Controls.Add(btnSetOutInterface, 2, 0);
+        leftLayout.Controls.Add(lblOutInterface, 0, 1);
+        leftLayout.Controls.Add(outInterfaceRow, 1, 1);
+
         lblHospital = CreateFieldLabel(UiGlyphs.Hospital, "Hospital");
         cboHospital = CreateCombo();
-        leftLayout.Controls.Add(lblHospital, 0, 1);
-        leftLayout.Controls.Add(WrapInput(cboHospital), 1, 1);
+        leftLayout.Controls.Add(lblHospital, 0, 2);
+        leftLayout.Controls.Add(WrapInput(cboHospital), 1, 2);
 
         lblCardType = CreateFieldLabel(UiGlyphs.CardType, "Card Type");
         cboCardType = CreateCombo();
-        leftLayout.Controls.Add(lblCardType, 0, 2);
-        leftLayout.Controls.Add(WrapInput(cboCardType), 1, 2);
+        leftLayout.Controls.Add(lblCardType, 0, 3);
+        leftLayout.Controls.Add(WrapInput(cboCardType), 1, 3);
 
         lblBatch = CreateFieldLabel(UiGlyphs.Batch, "Batch");
         txtBatch = CreateTextBox();
-        leftLayout.Controls.Add(lblBatch, 0, 3);
-        leftLayout.Controls.Add(WrapInput(txtBatch), 1, 3);
+        leftLayout.Controls.Add(lblBatch, 0, 4);
+        leftLayout.Controls.Add(WrapInput(txtBatch), 1, 4);
 
         lblStart = CreateFieldLabel(UiGlyphs.Start, "Start");
         txtStart = CreateTextBox();
-        leftLayout.Controls.Add(lblStart, 0, 4);
-        leftLayout.Controls.Add(WrapInput(txtStart), 1, 4);
+        leftLayout.Controls.Add(lblStart, 0, 5);
+        leftLayout.Controls.Add(WrapInput(txtStart), 1, 5);
 
         lblEnd = CreateFieldLabel(UiGlyphs.End, "End");
         txtEnd = CreateTextBox();
-        leftLayout.Controls.Add(lblEnd, 0, 5);
-        leftLayout.Controls.Add(WrapInput(txtEnd), 1, 5);
+        leftLayout.Controls.Add(lblEnd, 0, 6);
+        leftLayout.Controls.Add(WrapInput(txtEnd), 1, 6);
 
         lblCurrent = CreateFieldLabel(UiGlyphs.Current, "Current");
         txtCurrent = CreateTextBox();
@@ -329,8 +383,8 @@ partial class MainForm
         currentTip.SetToolTip(txtCurrent, "Current sequence — advances after success");
         currentTip.SetToolTip(lblCurrent, "Current sequence — advances after success");
         lblCurrentHint = new Label { Visible = false, Height = 0 };
-        leftLayout.Controls.Add(lblCurrent, 0, 6);
-        leftLayout.Controls.Add(WrapInput(txtCurrent), 1, 6);
+        leftLayout.Controls.Add(lblCurrent, 0, 7);
+        leftLayout.Controls.Add(WrapInput(txtCurrent), 1, 7);
 
         debugPanel = new Panel { Dock = DockStyle.Fill, Visible = false };
         var debugLayout = new TableLayoutPanel
@@ -359,10 +413,10 @@ partial class MainForm
         debugLayout.Controls.Add(txtCurrentEpc, 1, 1);
         debugPanel.Controls.Add(debugLayout);
         leftLayout.SetColumnSpan(debugPanel, 2);
-        leftLayout.Controls.Add(debugPanel, 0, 7);
+        leftLayout.Controls.Add(debugPanel, 0, 8);
 
         leftLayout.SetColumnSpan(buttonBar, 2);
-        leftLayout.Controls.Add(buttonBar, 0, 8);
+        leftLayout.Controls.Add(buttonBar, 0, 9);
 
         leftShell.Controls.Add(leftLayout, 0, 0);
         leftPanel.Controls.Add(leftShell);

@@ -148,6 +148,34 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
         }
     }
 
+    /// <inheritdoc />
+    public SdkResult<DeviceParameters> GetDevicePara()
+    {
+        ThrowIfDisposed();
+        try
+        {
+            return Map(_driver.GetDevicePara());
+        }
+        catch (NativeException ex)
+        {
+            throw new SdkException(ex.Message, ex);
+        }
+    }
+
+    /// <inheritdoc />
+    public SdkResult SetDevicePara(DeviceParameters para)
+    {
+        ThrowIfDisposed();
+        try
+        {
+            return Map(_driver.SetDevicePara(para));
+        }
+        catch (NativeException ex)
+        {
+            throw new SdkException(ex.Message, ex);
+        }
+    }
+
     // ----------------- IUhfInventory -----------------
 
     /// <inheritdoc />

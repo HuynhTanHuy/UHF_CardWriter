@@ -25,4 +25,39 @@ public static class DeviceConstants
 
     /// <summary>Polling interval inside a scan window (ms).</summary>
     public const int DefaultScanPollIntervalMs = 50;
+
+    // Vendor Form1 DevicePara.INTERFACE / sample port mapping (confirmed GET values).
+    public const byte OutInterfaceUsb = 0x01;
+    public const byte OutInterfaceKeyBoard = 0x02;
+    public const byte OutInterfaceCdcCom = 0x04;
+    public const byte OutInterfaceWiFi = 0x10;
+    public const byte OutInterfaceRj45 = 0x20;
+    public const byte OutInterfaceRs485 = 0x40;
+    public const byte OutInterfaceRs232 = 0x80;
+
+    /// <summary>Display names for vendor-confirmed Out Interface values.</summary>
+    public static string FormatOutInterface(byte raw) =>
+        raw switch
+        {
+            OutInterfaceUsb => "USB",
+            OutInterfaceKeyBoard => "KeyBoard",
+            OutInterfaceCdcCom => "CDC_COM",
+            OutInterfaceWiFi => "WiFi",
+            OutInterfaceRj45 => "RJ45",
+            OutInterfaceRs485 => "RS485",
+            OutInterfaceRs232 => "RS232",
+            _ => $"Unknown(0x{raw:X2})",
+        };
+
+    /// <summary>Vendor-confirmed Out Interface options for UI (name → raw).</summary>
+    public static IReadOnlyList<(string Name, byte Raw)> OutInterfaceOptions { get; } =
+    [
+        ("USB", OutInterfaceUsb),
+        ("KeyBoard", OutInterfaceKeyBoard),
+        ("CDC_COM", OutInterfaceCdcCom),
+        ("WiFi", OutInterfaceWiFi),
+        ("RJ45", OutInterfaceRj45),
+        ("RS485", OutInterfaceRs485),
+        ("RS232", OutInterfaceRs232),
+    ];
 }

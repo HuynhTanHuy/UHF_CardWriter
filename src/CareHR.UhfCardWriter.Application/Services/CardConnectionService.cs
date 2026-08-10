@@ -114,4 +114,58 @@ public sealed class CardConnectionService
 
         return _connection.OpenNet(endpoint.IpAddress.Trim(), endpoint.NetworkPort, endpoint.NetworkTimeoutMs);
     }
+
+    /// <summary>Reads <c>DevicePara.INTERFACE</c> (Out Interface) without changing other fields.</summary>
+    public DeviceResult<byte> GetOutInterface()
+    {
+        try
+        {
+            if (!_connection.IsOpen)
+                return DeviceResult<byte>.Fail(DeviceErrorCode.ReaderNotConnected, "Reader must be connected before this operation.");
+
+            var get = _connection.GetDevicePara();
+            if (!get.Success || get.Value is null)
+                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message);
+
+            return DeviceResult<byte>.Ok(get.Value.Interface, get.Message);
+        }
+        catch (DeviceException ex)
+        {
+            return CardValidation.MapDeviceException<byte>(ex);
+        }
+    }
+
+    /// <summary>
+    /// Sets only <c>DevicePara.INTERFACE</c>: GetDevicePara → modify Interface → SetDevicePara → Get verify.
+    /// All other DevicePara fields are preserved.
+    /// </summary>
+    public DeviceResult<byte> SetOutInterface(byte interfaceRaw)
+    {
+        try
+        {
+            if (!_connection.IsOpen)
+                return DeviceResult<byte>.Fail(DeviceErrorCode.ReaderNotConnected, "Reader must be connected before this operation.");
+
+            var get = _connection.GetDevicePara();
+            if (!get.Success || get.Value is null)
+                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message);
+
+            var para = get.Value;
+            para.Interface = interfaceRaw;
+
+            var set = _connection.SetDevicePara(para);
+            if (!set.Success)
+                return DeviceResult<byte>.Fail(set.ErrorCode, set.Message);
+
+            var verify = _connection.GetDevicePara();
+            if (!verify.Success || verify.Value is null)
+                return DeviceResult<byte>.Fail(verify.ErrorCode, verify.Message);
+
+            return DeviceResult<byte>.Ok(verify.Value.Interface, verify.Message);
+        }
+        catch (DeviceException ex)
+        {
+            return CardValidation.MapDeviceException<byte>(ex);
+        }
+    }
 }

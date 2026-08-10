@@ -20,4 +20,8 @@ public interface ICardConnection
     DeviceResult<int> GetUsbDeviceCount();
 
     DeviceResult<string> GetUsbDeviceInfo(ushort index, int capacity = DeviceConstants.DefaultUsbInfoCapacity);
+
+    DeviceResult<DeviceParameters> GetDevicePara();
+
+    DeviceResult SetDevicePara(DeviceParameters para);
 }

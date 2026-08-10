@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Native binaries from: CF600+601+603+SDK\UHF Desk Reader SDK\API\x64 -->
+    <!-- Native binaries: vendor Form1 x86 stack (UHFPrimeReader 1.0.0.1 + hidapi x86) -->
     <None Include="Native\UHFPrimeReader.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>UHFPrimeReader.dll</Link>

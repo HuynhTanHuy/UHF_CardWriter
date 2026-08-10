@@ -4,6 +4,8 @@ using AppCardIdentity = CareHR.UhfCardWriter.Application.Devices.CardIdentity;
 using AppCardInformation = CareHR.UhfCardWriter.Application.Devices.CardInformation;
 using AppCardReadResult = CareHR.UhfCardWriter.Application.Devices.CardReadResult;
 using AppCardWriteResult = CareHR.UhfCardWriter.Application.Devices.CardWriteResult;
+using AppDeviceParameters = CareHR.UhfCardWriter.Application.Devices.DeviceParameters;
+using SdkDeviceParameters = CareHR.UhfCardWriter.Sdk.Models.DeviceParameters;
 using SdkTagAccessResponse = CareHR.UhfCardWriter.Sdk.Models.TagAccessResponse;
 using SdkTagIdentity = CareHR.UhfCardWriter.Sdk.Models.TagIdentity;
 using SdkTagReadData = CareHR.UhfCardWriter.Sdk.Models.TagReadData;
@@ -69,6 +71,63 @@ internal static class SdkMapping
             Copy(source.Response.Code),
             source.WordCount,
             Copy(source.Data));
+
+    public static AppDeviceParameters ToDeviceParameters(SdkDeviceParameters source) =>
+        new()
+        {
+            DeviceAddr = source.DeviceAddr,
+            RfidPro = source.RfidPro,
+            WorkMode = source.WorkMode,
+            Interface = source.Interface,
+            BaudRate = source.BaudRate,
+            WgSet = source.WgSet,
+            Ant = source.Ant,
+            Region = source.Region,
+            StartFreI = source.StartFreI,
+            StartFreD = source.StartFreD,
+            StepFre = source.StepFre,
+            Cn = source.Cn,
+            RfidPower = source.RfidPower,
+            InventoryArea = source.InventoryArea,
+            QValue = source.QValue,
+            Session = source.Session,
+            AcsAddr = source.AcsAddr,
+            AcsDataLen = source.AcsDataLen,
+            FilterTime = source.FilterTime,
+            TriggleTime = source.TriggleTime,
+            BuzzerTime = source.BuzzerTime,
+            InternalTime = source.InternalTime,
+        };
+
+    public static SdkDeviceParameters ToSdkDeviceParameters(AppDeviceParameters source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        return new SdkDeviceParameters
+        {
+            DeviceAddr = source.DeviceAddr,
+            RfidPro = source.RfidPro,
+            WorkMode = source.WorkMode,
+            Interface = source.Interface,
+            BaudRate = source.BaudRate,
+            WgSet = source.WgSet,
+            Ant = source.Ant,
+            Region = source.Region,
+            StartFreI = source.StartFreI,
+            StartFreD = source.StartFreD,
+            StepFre = source.StepFre,
+            Cn = source.Cn,
+            RfidPower = source.RfidPower,
+            InventoryArea = source.InventoryArea,
+            QValue = source.QValue,
+            Session = source.Session,
+            AcsAddr = source.AcsAddr,
+            AcsDataLen = source.AcsDataLen,
+            FilterTime = source.FilterTime,
+            TriggleTime = source.TriggleTime,
+            BuzzerTime = source.BuzzerTime,
+            InternalTime = source.InternalTime,
+        };
+    }
 
     private static byte[] Copy(byte[]? source)
     {

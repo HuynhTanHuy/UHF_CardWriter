@@ -45,4 +45,14 @@ public sealed class CardConnectionAdapter : ICardConnection
     /// <inheritdoc />
     public DeviceResult<string> GetUsbDeviceInfo(ushort index, int capacity = DeviceConstants.DefaultUsbInfoCapacity) =>
         DeviceExceptionTranslator.Execute(() => SdkMapping.ToDevice(_sdk.Connection.GetUsbDeviceInfo(index, capacity)));
+
+    /// <inheritdoc />
+    public DeviceResult<DeviceParameters> GetDevicePara() =>
+        DeviceExceptionTranslator.Execute(() =>
+            SdkMapping.ToDevice(_sdk.Connection.GetDevicePara(), SdkMapping.ToDeviceParameters));
+
+    /// <inheritdoc />
+    public DeviceResult SetDevicePara(DeviceParameters para) =>
+        DeviceExceptionTranslator.Execute(() =>
+            SdkMapping.ToDevice(_sdk.Connection.SetDevicePara(SdkMapping.ToSdkDeviceParameters(para))));
 }
