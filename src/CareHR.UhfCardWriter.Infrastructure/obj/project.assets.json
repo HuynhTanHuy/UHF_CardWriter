@@ -100,11 +100,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj",
+      "projectUniqueName": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj",
       "projectName": "CareHR.UhfCardWriter.Infrastructure",
-      "projectPath": "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj",
+      "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj",
       "packagesPath": "C:\\Users\\tekme\\.nuget\\packages\\",
-      "outputPath": "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\obj\\",
+      "outputPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\tekme\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -122,8 +122,8 @@
             "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj": {
               "projectPath": "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Application\\CareHR.UhfCardWriter.Application.csproj"
             },
-            "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj": {
-              "projectPath": "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj"
+            "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj": {
+              "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj"
             }
           }
         }

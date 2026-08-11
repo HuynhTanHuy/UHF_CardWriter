@@ -33,6 +33,9 @@ public sealed partial class MainForm : Form
     private int _sessionFailed;
     private Stopwatch? _batchElapsed;
     private System.Windows.Forms.Timer? _elapsedTimer;
+    private System.Windows.Forms.Timer? _runAnimTimer;
+    private int _runAnimFrame;
+    private string? _connectTransientText;
 
     public MainForm(
         CardConnectionService connectionService,
@@ -110,7 +113,9 @@ public sealed partial class MainForm : Form
         RefreshTargetCardPreview();
         RefreshBatchCounters();
         ApplyDebugVisibility();
-        RefreshConnectionChrome();
+        ApplyConnectionUiState();
+        ApplyBatchUiState();
+        ApplyControlEnablement();
         SetUiState(UiState.Disconnected, "Connect a desk reader to begin.");
         LogOp("Ready", "Application ready.");
         ShowStartupFindings();
@@ -153,6 +158,7 @@ public sealed partial class MainForm : Form
     private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
     {
         _batchCts?.Cancel();
+        StopRunAnimation(restoreStartButton: false);
         _elapsedTimer?.Stop();
         try
         {
@@ -195,6 +201,8 @@ public sealed partial class MainForm : Form
 
         if (_connectionService.IsConnected)
         {
+            _connectTransientText = "Disconnecting…";
+            ApplyConnectionUiState();
             SetBusy(true);
             var sw = Stopwatch.StartNew();
             try
@@ -205,13 +213,14 @@ public sealed partial class MainForm : Form
                 LogOp("Disconnect", close.Success
                     ? "Reader disconnected."
                     : UserMessage.ForDeviceOrOperation(close.Message));
-                SetConnectButtonText(connected: false);
+                _connectTransientText = null;
                 SetUiState(UiState.Disconnected, "Reader disconnected.");
-                RefreshConnectionChrome();
             }
             finally
             {
+                _connectTransientText = null;
                 SetBusy(false);
+                ApplyConnectionUiState();
             }
 
             return;
@@ -223,6 +232,8 @@ public sealed partial class MainForm : Form
             return;
         }
 
+        _connectTransientText = "Connecting…";
+        ApplyConnectionUiState();
         SetBusy(true);
         SetUiState(UiState.Busy, "Connecting…");
         var connectSw = Stopwatch.StartNew();
@@ -235,15 +246,17 @@ public sealed partial class MainForm : Form
             {
                 var msg = UserMessage.ForDeviceOrOperation(result.Message);
                 LogOp("Connect", msg);
+                _connectTransientText = null;
                 SetUiState(UiState.Failed, msg);
+                ApplyConnectionUiState();
                 return;
             }
 
             LogOp("Connect", "Reader connected.");
             LogNativeRuntimeDiagnostics();
-            SetConnectButtonText(connected: true);
+            _connectTransientText = null;
             SetUiState(UiState.Ready, "Reader connected. Set range and press Start.");
-            RefreshConnectionChrome();
+            ApplyConnectionUiState();
             LoadOutInterfaceAfterConnect();
             LoadRfPowerAfterConnect();
         }
@@ -253,11 +266,15 @@ public sealed partial class MainForm : Form
             var msg = UserMessage.ForException(ex);
             AppLog.Error("Presentation", "Connect failed", ex);
             LogOp("Connect", msg);
+            _connectTransientText = null;
             SetUiState(UiState.Failed, msg);
+            ApplyConnectionUiState();
         }
         finally
         {
+            _connectTransientText = null;
             SetBusy(false);
+            ApplyConnectionUiState();
         }
     }
 
@@ -631,7 +648,9 @@ public sealed partial class MainForm : Form
         _sessionFailed = 0;
         _batchElapsed = Stopwatch.StartNew();
         StartElapsedTimer();
+        StartRunAnimation();
         SetBatchBusy(true);
+        SetUiState(UiState.Busy, "Starting batch…");
 
         var total = end - start + 1;
         batchResult.ResetSession(current, Math.Max(0, end - current + 1), start, end);
@@ -671,7 +690,7 @@ public sealed partial class MainForm : Form
                 lblFactoryEpc.Text = "—";
                 var cardDisplay = FormatCardDisplay(cardNumber!);
                 lblTargetCard.Text = cardDisplay;
-                SetUiState(UiState.WaitingForCard, $"Place card for {cardDisplay}.");
+                SetUiState(UiState.WaitingForCard, $"Đang chờ quét thẻ… ({cardDisplay})");
                 RefreshBatchCounters();
 
                 // Scan first so operator sees Factory Card before write.
@@ -686,20 +705,20 @@ public sealed partial class MainForm : Form
                 catch (OperationCanceledException)
                 {
                     LogOp("Stop", "Batch stopped.");
-                    SetUiState(UiState.Ready, "Batch stopped.");
+                    SetUiState(UiState.Ready, "STOPPED — Batch stopped.");
                     break;
                 }
 
                 if (_batchCts.IsCancellationRequested || scan.Outcome == ScanOutcome.Cancelled)
                 {
                     LogOp("Stop", "Batch stopped.");
-                    SetUiState(UiState.Ready, "Batch stopped.");
+                    SetUiState(UiState.Ready, "STOPPED — Batch stopped.");
                     break;
                 }
 
                 if (!scan.Success || scan.Card is null)
                 {
-                    SetUiState(UiState.WaitingForCard, $"Place card for {cardDisplay}.");
+                    SetUiState(UiState.WaitingForCard, $"Đang chờ quét thẻ… ({cardDisplay})");
                     continue;
                 }
 
@@ -720,7 +739,7 @@ public sealed partial class MainForm : Form
                     batchCode!,
                     _settings.Reader.ScanTimeoutMs);
 
-                SetUiState(UiState.Writing, $"Writing {cardDisplay}…");
+                SetUiState(UiState.Writing, $"Đang ghi thẻ… {cardDisplay}");
                 LogOp("Write", "Writing.");
 
                 CardWriteJobResult result;
@@ -825,11 +844,17 @@ public sealed partial class MainForm : Form
             _batchRunning = false;
             _batchElapsed?.Stop();
             StopElapsedTimer();
+            StopRunAnimation(restoreStartButton: true);
             SetBatchBusy(false);
             if (_connectionService.IsConnected &&
                 _uiState is not UiState.Failed and not UiState.Done)
             {
-                SetUiState(UiState.Ready, "Ready for next card. Press Start to continue.");
+                SetUiState(UiState.Ready, "Stopped. Ready for next card. Press Start to continue.");
+            }
+            else
+            {
+                ApplyBatchUiState();
+                ApplyConnectionUiState();
             }
         }
     }
@@ -844,6 +869,9 @@ public sealed partial class MainForm : Form
         {
             _ = _orchestrator.CancelOperation();
             LogOp("Stop", "Stopping…");
+            SetUiState(UiState.Busy, "STOPPING…");
+            btnStart.Text = "STOPPING…";
+            btnStart.BackColor = UiColors.CareHrBlue;
         }
         catch (Exception ex)
         {
@@ -901,7 +929,121 @@ public sealed partial class MainForm : Form
 
     private void SetConnectButtonText(bool connected)
     {
-        btnConnect.Text = connected ? "Disconnect" : "Connect";
+        // Kept for compatibility; visual state is owned by ApplyConnectionUiState.
+        _connectTransientText = null;
+        ApplyConnectionUiState();
+        _ = connected;
+    }
+
+    private void ApplyConnectionUiState()
+    {
+        var connected = _connectionService.IsConnected;
+
+        if (!string.IsNullOrWhiteSpace(_connectTransientText))
+        {
+            btnConnect.Text = _connectTransientText;
+            btnConnect.BackColor = UiColors.Warning;
+            btnConnect.ForeColor = Color.White;
+            lblReaderStatus.Text = connected ? "● …" : "○ …";
+            lblReaderStatus.ForeColor = UiColors.Warning;
+            lblStatusBarLeft.Text = _connectTransientText;
+            lblStatusBarLeft.ForeColor = UiColors.Warning;
+        }
+        else if (connected)
+        {
+            btnConnect.Text = "Disconnect";
+            btnConnect.BackColor = UiColors.CareHrBlue;
+            btnConnect.ForeColor = Color.White;
+            lblReaderStatus.Text = "● Online";
+            lblReaderStatus.ForeColor = UiColors.Success;
+            lblStatusBarLeft.Text = "●  Reader connected";
+            lblStatusBarLeft.ForeColor = UiColors.Success;
+            lblStatusBarRight.Text = $"Version {DiagnosticsInfo.ApplicationVersion}   ·   Online";
+        }
+        else
+        {
+            btnConnect.Text = "Connect";
+            btnConnect.BackColor = UiColors.CareHrBlue;
+            btnConnect.ForeColor = Color.White;
+            lblReaderStatus.Text = "○ Offline";
+            lblReaderStatus.ForeColor = UiColors.TextMuted;
+            lblStatusBarLeft.Text = "Reader disconnected";
+            lblStatusBarLeft.ForeColor = UiColors.TextMuted;
+            lblStatusBarRight.Text = $"Version {DiagnosticsInfo.ApplicationVersion}";
+        }
+
+        lblStatusBarRight.Location = new Point(
+            statusBar.ClientSize.Width - lblStatusBarRight.Width - 12,
+            6);
+    }
+
+    private void ApplyBatchUiState()
+    {
+        if (_batchRunning)
+        {
+            btnStop.BackColor = Color.FromArgb(170, 55, 55);
+            btnStop.ForeColor = Color.White;
+            if (_runAnimTimer is null)
+                btnStart.Text = "RUNNING";
+            btnStart.BackColor = UiColors.CareHrBlue;
+            btnStart.ForeColor = Color.White;
+        }
+        else
+        {
+            btnStart.Text = "Start";
+            btnStart.BackColor = UiColors.CareHrBlue;
+            btnStart.ForeColor = Color.White;
+            btnStop.BackColor = Color.FromArgb(158, 158, 158);
+            btnStop.ForeColor = Color.White;
+        }
+    }
+
+    private void StartRunAnimation()
+    {
+        StopRunAnimation(restoreStartButton: false);
+        _runAnimFrame = 0;
+        btnStart.BackColor = UiColors.CareHrBlue;
+        btnStart.ForeColor = Color.White;
+        btnStart.Text = "RUNNING";
+        _runAnimTimer = new System.Windows.Forms.Timer { Interval = 280 };
+        _runAnimTimer.Tick += RunAnimTimer_Tick;
+        _runAnimTimer.Start();
+    }
+
+    private void RunAnimTimer_Tick(object? sender, EventArgs e)
+    {
+        if (!_batchRunning)
+        {
+            StopRunAnimation(restoreStartButton: true);
+            return;
+        }
+
+        if (string.Equals(btnStart.Text, "STOPPING…", StringComparison.Ordinal))
+            return;
+
+        // Soft text-only cue on Start (no color flash) — primary animation is StatusPanel.
+        var dots = _runAnimFrame % 4;
+        btnStart.Text = dots == 0 ? "RUNNING" : "RUNNING" + new string('.', dots);
+        _runAnimFrame++;
+    }
+
+    private void StopRunAnimation(bool restoreStartButton)
+    {
+        if (_runAnimTimer is not null)
+        {
+            _runAnimTimer.Stop();
+            _runAnimTimer.Tick -= RunAnimTimer_Tick;
+            _runAnimTimer.Dispose();
+            _runAnimTimer = null;
+        }
+
+        _runAnimFrame = 0;
+        if (restoreStartButton && !_batchRunning)
+        {
+            btnStart.Text = "Start";
+            btnStart.BackColor = UiColors.CareHrBlue;
+            btnStart.ForeColor = Color.White;
+        }
     }
 
     private void SyncCurrentFromStart()
@@ -1144,30 +1286,7 @@ public sealed partial class MainForm : Form
             end: end);
     }
 
-    private void RefreshConnectionChrome()
-    {
-        var connected = _connectionService.IsConnected;
-        if (connected)
-        {
-            lblReaderStatus.Text = "Connected";
-            lblReaderStatus.ForeColor = UiColors.Success;
-            lblStatusBarLeft.Text = "Reader ready";
-            lblStatusBarLeft.ForeColor = UiColors.Success;
-            lblStatusBarRight.Text = $"Version {DiagnosticsInfo.ApplicationVersion}   ·   Online";
-        }
-        else
-        {
-            lblReaderStatus.Text = "Offline";
-            lblReaderStatus.ForeColor = UiColors.TextMuted;
-            lblStatusBarLeft.Text = "Reader offline";
-            lblStatusBarLeft.ForeColor = UiColors.TextMuted;
-            lblStatusBarRight.Text = $"Version {DiagnosticsInfo.ApplicationVersion}";
-        }
-
-        lblStatusBarRight.Location = new Point(
-            statusBar.ClientSize.Width - lblStatusBarRight.Width - 12,
-            6);
-    }
+    private void RefreshConnectionChrome() => ApplyConnectionUiState();
 
     private void LogOp(string action, string result)
     {
@@ -1296,33 +1415,43 @@ public sealed partial class MainForm : Form
 
     private void ApplyControlEnablement()
     {
+        var connected = _connectionService.IsConnected;
         var inputsEnabled = !_busy && !_batchRunning;
         cboHospital.Enabled = inputsEnabled;
         cboCardType.Enabled = inputsEnabled;
         txtBatch.Enabled = inputsEnabled;
         txtStart.Enabled = inputsEnabled;
         txtEnd.Enabled = inputsEnabled;
-        cboReader.Enabled = inputsEnabled;
-        btnConnect.Enabled = inputsEnabled;
-        btnStart.Enabled = inputsEnabled;
+        cboReader.Enabled = inputsEnabled && !connected;
+        btnConnect.Enabled = !_batchRunning && !_busy;
+        btnStart.Enabled = inputsEnabled && connected;
         btnSettings.Enabled = inputsEnabled;
-        btnStop.Enabled = true;
-        var outInterfaceEnabled = inputsEnabled && _connectionService.IsConnected;
-        cboOutInterface.Enabled = outInterfaceEnabled;
-        btnGetOutInterface.Enabled = outInterfaceEnabled;
-        btnSetOutInterface.Enabled = outInterfaceEnabled;
-        cboRfPower.Enabled = outInterfaceEnabled;
-        btnGetRfPower.Enabled = outInterfaceEnabled;
-        btnSetRfPower.Enabled = outInterfaceEnabled;
+        btnStop.Enabled = _batchRunning;
+        var deviceControlsEnabled = inputsEnabled && connected;
+        cboOutInterface.Enabled = deviceControlsEnabled;
+        btnGetOutInterface.Enabled = deviceControlsEnabled;
+        btnSetOutInterface.Enabled = deviceControlsEnabled;
+        cboRfPower.Enabled = deviceControlsEnabled;
+        btnGetRfPower.Enabled = deviceControlsEnabled;
+        btnSetRfPower.Enabled = deviceControlsEnabled;
         txtCurrent.ReadOnly = true;
         txtCurrent.Enabled = true;
+        ApplyBatchUiState();
+        ApplyConnectionUiState();
     }
 
     private void SetUiState(UiState state, string detail)
     {
+        if (InvokeRequired)
+        {
+            BeginInvoke(() => SetUiState(state, detail));
+            return;
+        }
+
         _uiState = state;
         statusPanel.SetState(state, detail);
-        RefreshConnectionChrome();
+        ApplyConnectionUiState();
+        ApplyBatchUiState();
     }
 
     private sealed class ReaderListItem

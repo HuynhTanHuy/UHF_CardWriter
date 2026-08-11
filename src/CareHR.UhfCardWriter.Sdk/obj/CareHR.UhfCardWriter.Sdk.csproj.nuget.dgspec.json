@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj": {}
+    "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj": {}
   },
   "projects": {
-    "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj": {
+    "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj",
+        "projectUniqueName": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj",
         "projectName": "CareHR.UhfCardWriter.Sdk",
-        "projectPath": "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj",
+        "projectPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\CareHR.UhfCardWriter.Sdk.csproj",
         "packagesPath": "C:\\Users\\tekme\\.nuget\\packages\\",
-        "outputPath": "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\obj\\",
+        "outputPath": "d:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Sdk\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\tekme\\AppData\\Roaming\\NuGet\\NuGet.Config"
