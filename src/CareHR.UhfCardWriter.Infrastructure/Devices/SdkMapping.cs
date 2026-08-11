@@ -23,22 +23,22 @@ internal static class SdkMapping
     public static DeviceResult ToDevice(SdkResult result)
     {
         var error = DeviceErrorMapper.FromVendorStatus(result.StatusCode, result.Success);
-        return new DeviceResult(error, result.Success, result.Message);
+        return new DeviceResult(error, result.Success, result.Message, result.StatusCode);
     }
 
     public static DeviceResult<T> ToDevice<T>(SdkResult<T> result)
     {
         var error = DeviceErrorMapper.FromVendorStatus(result.StatusCode, result.Success);
-        return new DeviceResult<T>(error, result.Success, result.Message, result.Value);
+        return new DeviceResult<T>(error, result.Success, result.Message, result.Value, result.StatusCode);
     }
 
     public static DeviceResult<TOut> ToDevice<TIn, TOut>(SdkResult<TIn> result, Func<TIn, TOut> map)
     {
         var error = DeviceErrorMapper.FromVendorStatus(result.StatusCode, result.Success);
         if (!result.Success || result.Value is null)
-            return new DeviceResult<TOut>(error, false, result.Message, default);
+            return new DeviceResult<TOut>(error, false, result.Message, default, result.StatusCode);
 
-        return new DeviceResult<TOut>(error, true, result.Message, map(result.Value));
+        return new DeviceResult<TOut>(error, true, result.Message, map(result.Value), result.StatusCode);
     }
 
     public static AppCardInformation ToCardInformation(SdkTagIdentity source)

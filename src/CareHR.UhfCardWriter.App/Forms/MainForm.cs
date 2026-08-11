@@ -257,8 +257,8 @@ public sealed partial class MainForm : Form
             _connectTransientText = null;
             SetUiState(UiState.Ready, "Reader connected. Set range and press Start.");
             ApplyConnectionUiState();
-            LoadOutInterfaceAfterConnect();
-            LoadRfPowerAfterConnect();
+            // One GetDevicePara — never concurrent Out Interface + RF Power loads.
+            await LoadDeviceParaAfterConnectAsync().ConfigureAwait(true);
         }
         catch (Exception ex)
         {
@@ -286,18 +286,29 @@ public sealed partial class MainForm : Form
         SetBusy(true);
         try
         {
+            var threadId = Environment.CurrentManagedThreadId;
+            LogOp("DevicePara", $"[DevicePara] GetStart ThreadId={threadId} Op=OutInterface");
+            AppLog.Info("DevicePara", $"[DevicePara] GetStart ThreadId={threadId} Op=OutInterface");
+            var sw = Stopwatch.StartNew();
             var result = await Task.Run(() => _connectionService.GetOutInterface()).ConfigureAwait(true);
+            sw.Stop();
             if (!result.Success)
             {
-                LogOp("Get Out Interface", UserMessage.ForDeviceOrOperation(result.Message));
+                LogOp(
+                    "Get Out Interface",
+                    $"Status=0x{result.VendorStatusCode:X8} Success=false {UserMessage.ForDeviceOrOperation(result.Message)}");
+                LogOp("DevicePara", $"[DevicePara] GetElapsedMs={sw.ElapsedMilliseconds}");
                 return;
             }
 
             var raw = result.Value;
             var name = DeviceConstants.FormatOutInterface(raw);
             ApplyOutInterfaceSelection(raw);
-            LogOp("Get Out Interface", $"Raw={raw} Name={name}");
-            AppLog.Info("DevicePara", $"InterfaceRaw={raw} Interface={name}");
+            LogOp(
+                "Get Out Interface",
+                $"Status=0x{result.VendorStatusCode:X8} Success=true Raw={raw} Name={name}");
+            LogOp("DevicePara", $"[DevicePara] GetElapsedMs={sw.ElapsedMilliseconds}");
+            AppLog.Info("DevicePara", $"InterfaceRaw={raw} Interface={name} Status=0x{result.VendorStatusCode:X8}");
         }
         catch (Exception ex)
         {
@@ -330,10 +341,13 @@ public sealed partial class MainForm : Form
             var toRaw = selected.Raw;
             var toName = selected.Name;
 
+            LogOp("DevicePara", $"[DevicePara] SetStart ThreadId={Environment.CurrentManagedThreadId} Op=OutInterface");
             var set = await Task.Run(() => _connectionService.SetOutInterface(toRaw)).ConfigureAwait(true);
             if (!set.Success)
             {
-                LogOp("Set Out Interface", $"failed: {UserMessage.ForDeviceOrOperation(set.Message)}");
+                LogOp(
+                    "Set Out Interface",
+                    $"Status=0x{set.VendorStatusCode:X8} Success=false {UserMessage.ForDeviceOrOperation(set.Message)}");
                 return;
             }
 
@@ -342,7 +356,9 @@ public sealed partial class MainForm : Form
             ApplyOutInterfaceSelection(verified);
             LogOp(
                 "Set Out Interface",
-                $"From={fromRaw} {fromName} To={toRaw} {toName} SetDevicePara=OK Verify={verified} {verifiedName}");
+                $"Status=0x{set.VendorStatusCode:X8} From={fromRaw} {fromName} To={toRaw} {toName} SetDevicePara=OK Verify={verified} {verifiedName}");
+            LogOp("DevicePara", $"[DevicePara] SetResult Status=0x{set.VendorStatusCode:X8} Success=true");
+            LogOp("DevicePara", $"[DevicePara] VerifyResult Status=0x{set.VendorStatusCode:X8}");
             AppLog.Info("DevicePara", $"InterfaceRaw={verified} Interface={verifiedName}");
         }
         catch (Exception ex)
@@ -356,27 +372,57 @@ public sealed partial class MainForm : Form
         }
     }
 
-    private async void LoadOutInterfaceAfterConnect()
+    /// <summary>
+    /// Post-connect: exactly one GetDevicePara → Out Interface + RF Power.
+    /// </summary>
+    private async Task LoadDeviceParaAfterConnectAsync()
     {
         try
         {
-            var result = await Task.Run(() => _connectionService.GetOutInterface()).ConfigureAwait(true);
-            if (!result.Success)
+            var threadId = Environment.CurrentManagedThreadId;
+            LogOp("DevicePara", $"[DevicePara] GetStart ThreadId={threadId} Op=PostConnect");
+            AppLog.Info("DevicePara", $"[DevicePara] GetStart ThreadId={threadId} Op=PostConnect");
+            var sw = Stopwatch.StartNew();
+            var result = await Task.Run(() => _connectionService.GetDeviceParameters()).ConfigureAwait(true);
+            sw.Stop();
+
+            if (!result.Success || result.Value is null)
             {
-                LogOp("Get Out Interface", UserMessage.ForDeviceOrOperation(result.Message));
+                var msg = UserMessage.ForDeviceOrOperation(result.Message);
+                LogOp(
+                    "DevicePara",
+                    $"[DevicePara] GetResult Status=0x{result.VendorStatusCode:X8} Success=false ThreadId={threadId}");
+                LogOp("DevicePara", $"[DevicePara] GetElapsedMs={sw.ElapsedMilliseconds}");
+                LogOp("Get Out Interface", msg);
+                LogOp("RFPower", $"[RFPower] GetResult Status=0x{result.VendorStatusCode:X8} Success=false {msg}");
                 return;
             }
 
-            var raw = result.Value;
-            var name = DeviceConstants.FormatOutInterface(raw);
-            ApplyOutInterfaceSelection(raw);
-            LogOp("Get Out Interface", $"Raw={raw} Name={name}");
-            AppLog.Info("DevicePara", $"InterfaceRaw={raw} Interface={name}");
+            var para = result.Value;
+            var ifaceName = DeviceConstants.FormatOutInterface(para.Interface);
+            ApplyOutInterfaceSelection(para.Interface);
+            LogOp(
+                "Get Out Interface",
+                $"Status=0x{result.VendorStatusCode:X8} Success=true Raw={para.Interface} Name={ifaceName}");
+            AppLog.Info("DevicePara", $"InterfaceRaw={para.Interface} Interface={ifaceName}");
+
+            ApplyRfPowerSelection(para.RfidPower);
+            LogOp(
+                "RFPower",
+                $"[RFPower] GetResult Status=0x{result.VendorStatusCode:X8} Success=true Actual={para.RfidPower}");
+            LogOp(
+                "DevicePara",
+                $"[DevicePara] GetResult Status=0x{result.VendorStatusCode:X8} Success=true ThreadId={threadId}");
+            LogOp("DevicePara", $"[DevicePara] GetElapsedMs={sw.ElapsedMilliseconds}");
+            AppLog.Info(
+                "DevicePara",
+                $"[DevicePara] GetResult Status=0x{result.VendorStatusCode:X8} Success=true " +
+                $"Interface={para.Interface} RfidPower={para.RfidPower} ElapsedMs={sw.ElapsedMilliseconds}");
         }
         catch (Exception ex)
         {
-            AppLog.Error("Presentation", "Load Out Interface failed", ex);
-            LogOp("Get Out Interface", UserMessage.ForException(ex));
+            AppLog.Error("Presentation", "Load DevicePara after connect failed", ex);
+            LogOp("DevicePara", UserMessage.ForException(ex));
         }
     }
 
@@ -401,20 +447,34 @@ public sealed partial class MainForm : Form
         SetBusy(true);
         try
         {
+            var threadId = Environment.CurrentManagedThreadId;
             LogOp("RFPower", "[RFPower] GetStart");
+            LogOp("DevicePara", $"[DevicePara] GetStart ThreadId={threadId} Op=RfPower");
             AppLog.Info("RFPower", "[RFPower] GetStart");
+            var sw = Stopwatch.StartNew();
             var result = await Task.Run(() => _connectionService.GetRfPower()).ConfigureAwait(true);
+            sw.Stop();
             if (!result.Success)
             {
                 var msg = UserMessage.ForDeviceOrOperation(result.Message);
-                LogOp("RFPower", $"[RFPower] GetResult Success=false {msg}");
-                AppLog.Warn("RFPower", $"[RFPower] GetResult Success=false Message={result.Message}");
+                LogOp(
+                    "RFPower",
+                    $"[RFPower] GetResult Status=0x{result.VendorStatusCode:X8} Success=false {msg}");
+                LogOp("DevicePara", $"[DevicePara] GetElapsedMs={sw.ElapsedMilliseconds}");
+                AppLog.Warn(
+                    "RFPower",
+                    $"[RFPower] GetResult Status=0x{result.VendorStatusCode:X8} Success=false Message={result.Message}");
                 return;
             }
 
             ApplyRfPowerSelection(result.Value);
-            LogOp("RFPower", $"[RFPower] GetResult Success=true Actual={result.Value}");
-            AppLog.Info("RFPower", $"[RFPower] Current={result.Value}");
+            LogOp(
+                "RFPower",
+                $"[RFPower] GetResult Status=0x{result.VendorStatusCode:X8} Success=true Actual={result.Value}");
+            LogOp("DevicePara", $"[DevicePara] GetElapsedMs={sw.ElapsedMilliseconds}");
+            AppLog.Info(
+                "RFPower",
+                $"[RFPower] GetResult Status=0x{result.VendorStatusCode:X8} Success=true Actual={result.Value}");
         }
         catch (Exception ex)
         {
@@ -454,21 +514,25 @@ public sealed partial class MainForm : Form
         try
         {
             LogOp("RFPower", $"[RFPower] SetStart Requested={requested}");
+            LogOp("DevicePara", $"[DevicePara] SetStart ThreadId={Environment.CurrentManagedThreadId} Op=RfPower");
             AppLog.Info("RFPower", $"[RFPower] SetStart Requested={requested}");
 
             var set = await Task.Run(() => _connectionService.SetRfPower(requested)).ConfigureAwait(true);
             if (!set.Success)
             {
                 var msg = UserMessage.ForDeviceOrOperation(set.Message);
-                LogOp("RFPower", $"[RFPower] SetResult Success=false {msg}");
-                AppLog.Warn("RFPower", $"[RFPower] SetResult Success=false Message={set.Message}");
+                LogOp(
+                    "RFPower",
+                    $"[RFPower] SetResult Status=0x{set.VendorStatusCode:X8} Success=false {msg}");
+                AppLog.Warn(
+                    "RFPower",
+                    $"[RFPower] SetResult Status=0x{set.VendorStatusCode:X8} Success=false Message={set.Message}");
                 MessageBox.Show(
                     this,
                     "Không thể thiết lập RF Power. " + msg,
                     "RF Power",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
-                // Do not keep a failed requested value — reload last known from reader if possible.
                 var fallback = await Task.Run(() => _connectionService.GetRfPower()).ConfigureAwait(true);
                 if (fallback.Success)
                     ApplyRfPowerSelection(fallback.Value);
@@ -476,8 +540,18 @@ public sealed partial class MainForm : Form
             }
 
             ApplyRfPowerSelection(set.Value);
-            LogOp("RFPower", $"[RFPower] SetResult Success=true Requested={requested} Actual={set.Value}");
-            AppLog.Info("RFPower", $"[RFPower] Verify Current={set.Value}");
+            LogOp(
+                "RFPower",
+                $"[RFPower] SetResult Status=0x{set.VendorStatusCode:X8} Success=true Requested={requested} Actual={set.Value}");
+            LogOp(
+                "DevicePara",
+                $"[DevicePara] SetResult Status=0x{set.VendorStatusCode:X8} Success=true");
+            LogOp(
+                "DevicePara",
+                $"[DevicePara] VerifyResult Status=0x{set.VendorStatusCode:X8} Actual={set.Value}");
+            AppLog.Info(
+                "RFPower",
+                $"[RFPower] VerifyResult Status=0x{set.VendorStatusCode:X8} Actual={set.Value}");
         }
         catch (Exception ex)
         {
@@ -487,31 +561,6 @@ public sealed partial class MainForm : Form
         finally
         {
             SetBusy(false);
-        }
-    }
-
-    private async void LoadRfPowerAfterConnect()
-    {
-        try
-        {
-            LogOp("RFPower", "[RFPower] GetStart");
-            AppLog.Info("RFPower", "[RFPower] GetStart");
-            var result = await Task.Run(() => _connectionService.GetRfPower()).ConfigureAwait(true);
-            if (!result.Success)
-            {
-                LogOp("RFPower", $"[RFPower] GetResult Success=false {UserMessage.ForDeviceOrOperation(result.Message)}");
-                AppLog.Warn("RFPower", $"[RFPower] GetResult Success=false Message={result.Message}");
-                return;
-            }
-
-            ApplyRfPowerSelection(result.Value);
-            LogOp("RFPower", $"[RFPower] GetResult Success=true Actual={result.Value}");
-            AppLog.Info("RFPower", $"[RFPower] Current={result.Value}");
-        }
-        catch (Exception ex)
-        {
-            AppLog.Error("Presentation", "Load RF Power failed", ex);
-            LogOp("RFPower", UserMessage.ForException(ex));
         }
     }
 

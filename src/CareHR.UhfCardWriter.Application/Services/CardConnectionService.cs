@@ -68,7 +68,8 @@ public sealed class CardConnectionService
         {
             var countResult = _connection.GetUsbDeviceCount();
             if (!countResult.Success)
-                return DeviceResult<IReadOnlyList<ReaderInformation>>.Fail(countResult.ErrorCode, countResult.Message);
+                return DeviceResult<IReadOnlyList<ReaderInformation>>.Fail(
+                    countResult.ErrorCode, countResult.Message, countResult.VendorStatusCode);
 
             var count = countResult.Value;
             if (count < 0)
@@ -115,6 +116,32 @@ public sealed class CardConnectionService
         return _connection.OpenNet(endpoint.IpAddress.Trim(), endpoint.NetworkPort, endpoint.NetworkTimeoutMs);
     }
 
+    /// <summary>
+    /// Single <c>GetDevicePara</c> for post-connect UI (Out Interface + RF Power).
+    /// Prefer this over separate GetOutInterface + GetRfPower after Connect.
+    /// </summary>
+    public DeviceResult<DeviceParameters> GetDeviceParameters()
+    {
+        try
+        {
+            if (!_connection.IsOpen)
+            {
+                return DeviceResult<DeviceParameters>.Fail(
+                    DeviceErrorCode.ReaderNotConnected,
+                    "Reader must be connected before this operation.");
+            }
+
+            var get = _connection.GetDevicePara();
+            return get.Success && get.Value is not null
+                ? DeviceResult<DeviceParameters>.Ok(get.Value, get.Message, get.VendorStatusCode)
+                : DeviceResult<DeviceParameters>.Fail(get.ErrorCode, get.Message, get.VendorStatusCode);
+        }
+        catch (DeviceException ex)
+        {
+            return CardValidation.MapDeviceException<DeviceParameters>(ex);
+        }
+    }
+
     /// <summary>Reads <c>DevicePara.INTERFACE</c> (Out Interface) without changing other fields.</summary>
     public DeviceResult<byte> GetOutInterface()
     {
@@ -125,9 +152,9 @@ public sealed class CardConnectionService
 
             var get = _connection.GetDevicePara();
             if (!get.Success || get.Value is null)
-                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message);
+                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message, get.VendorStatusCode);
 
-            return DeviceResult<byte>.Ok(get.Value.Interface, get.Message);
+            return DeviceResult<byte>.Ok(get.Value.Interface, get.Message, get.VendorStatusCode);
         }
         catch (DeviceException ex)
         {
@@ -137,7 +164,6 @@ public sealed class CardConnectionService
 
     /// <summary>
     /// Sets only <c>DevicePara.INTERFACE</c>: GetDevicePara → modify Interface → SetDevicePara → Get verify.
-    /// All other DevicePara fields are preserved.
     /// </summary>
     public DeviceResult<byte> SetOutInterface(byte interfaceRaw)
     {
@@ -148,20 +174,20 @@ public sealed class CardConnectionService
 
             var get = _connection.GetDevicePara();
             if (!get.Success || get.Value is null)
-                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message);
+                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message, get.VendorStatusCode);
 
             var para = get.Value;
             para.Interface = interfaceRaw;
 
             var set = _connection.SetDevicePara(para);
             if (!set.Success)
-                return DeviceResult<byte>.Fail(set.ErrorCode, set.Message);
+                return DeviceResult<byte>.Fail(set.ErrorCode, set.Message, set.VendorStatusCode);
 
             var verify = _connection.GetDevicePara();
             if (!verify.Success || verify.Value is null)
-                return DeviceResult<byte>.Fail(verify.ErrorCode, verify.Message);
+                return DeviceResult<byte>.Fail(verify.ErrorCode, verify.Message, verify.VendorStatusCode);
 
-            return DeviceResult<byte>.Ok(verify.Value.Interface, verify.Message);
+            return DeviceResult<byte>.Ok(verify.Value.Interface, verify.Message, verify.VendorStatusCode);
         }
         catch (DeviceException ex)
         {
@@ -181,9 +207,9 @@ public sealed class CardConnectionService
 
             var get = _connection.GetDevicePara();
             if (!get.Success || get.Value is null)
-                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message);
+                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message, get.VendorStatusCode);
 
-            return DeviceResult<byte>.Ok(get.Value.RfidPower, get.Message);
+            return DeviceResult<byte>.Ok(get.Value.RfidPower, get.Message, get.VendorStatusCode);
         }
         catch (DeviceException ex)
         {
@@ -192,8 +218,8 @@ public sealed class CardConnectionService
     }
 
     /// <summary>
-    /// Sets only <c>DevicePara.RFIDPOWER</c>: Get → modify RfidPower → SetDevicePara → Get verify
-    /// (same pattern as vendor Form1 btnSetTxPower).
+    /// Sets only <c>DevicePara.RFIDPOWER</c>: Get → modify RfidPower → SetDevicePara → Get verify.
+    /// Success only when verified Actual equals Requested.
     /// </summary>
     public DeviceResult<byte> SetRfPower(byte powerDbm)
     {
@@ -211,20 +237,29 @@ public sealed class CardConnectionService
 
             var get = _connection.GetDevicePara();
             if (!get.Success || get.Value is null)
-                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message);
+                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message, get.VendorStatusCode);
 
             var para = get.Value;
             para.RfidPower = powerDbm;
 
             var set = _connection.SetDevicePara(para);
             if (!set.Success)
-                return DeviceResult<byte>.Fail(set.ErrorCode, set.Message);
+                return DeviceResult<byte>.Fail(set.ErrorCode, set.Message, set.VendorStatusCode);
 
             var verify = _connection.GetDevicePara();
             if (!verify.Success || verify.Value is null)
-                return DeviceResult<byte>.Fail(verify.ErrorCode, verify.Message);
+                return DeviceResult<byte>.Fail(verify.ErrorCode, verify.Message, verify.VendorStatusCode);
 
-            return DeviceResult<byte>.Ok(verify.Value.RfidPower, verify.Message);
+            var actual = verify.Value.RfidPower;
+            if (actual != powerDbm)
+            {
+                return DeviceResult<byte>.Fail(
+                    DeviceErrorCode.InvalidParameter,
+                    $"RF Power verify mismatch. Requested={powerDbm} Actual={actual}",
+                    verify.VendorStatusCode);
+            }
+
+            return DeviceResult<byte>.Ok(actual, verify.Message, verify.VendorStatusCode);
         }
         catch (DeviceException ex)
         {
