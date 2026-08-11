@@ -198,11 +198,13 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
         ThrowIfDisposed();
         try
         {
-            WriteDiag(
-                $"[Write] InventoryStopStart Timeout={timeoutMs} ThreadId={Environment.CurrentManagedThreadId}");
             var stop = _driver.InventoryStop(timeoutMs);
-            WriteDiag(
-                $"[Write] InventoryStopResult Status=0x{stop.StatusCode:X8} Success={stop.Success} Message={stop.Message}");
+            if (!stop.Success)
+            {
+                WriteDiag(
+                    $"[Write] InventoryStopResult Status=0x{stop.StatusCode:X8} Success=false Message={stop.Message}");
+            }
+
             return Map(stop);
         }
         catch (NativeException ex)
@@ -250,63 +252,41 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
             var dataHex = writeData is null || writeData.Length == 0
                 ? "(empty)"
                 : Convert.ToHexString(writeData);
-            var threadId = Environment.CurrentManagedThreadId;
-            var sleep20 = IsSleep20DiagEnabled();
-            var tag = sleep20 ? "[TEST-SLEEP20]" : "[Write]";
 
             WriteDiag(
-                $"{tag} WriteTagStart Option={option} Bank={memBank} WordPtr={wordPtr} " +
+                $"[Write] WriteTagStart Option={option} Bank={memBank} WordPtr={wordPtr} " +
                 $"DataLength={dataLen} WordCount={wordCount} DataHex={dataHex} " +
-                $"PasswordPresent={(pwdLen > 0)} PasswordLength={pwdLen} Timeout={responseTimeoutMs} " +
-                $"ThreadId={threadId} DiagMode={(sleep20 ? "Sleep20" : "Baseline")}");
+                $"PasswordPresent={(pwdLen > 0)} PasswordLength={pwdLen} Timeout={responseTimeoutMs}");
 
             var write = _driver.WriteTag(option, accessPassword!, (byte)memBank, wordPtr, writeData!);
             WriteDiag(
-                $"{tag} WriteTagResult Status=0x{write.StatusCode:X8} Success={write.Success} Message={write.Message}");
+                $"[Write] WriteTagResult Status=0x{write.StatusCode:X8} Success={write.Success} Message={write.Message}");
             if (!write.Success)
             {
-                WriteDiag($"{tag} FinalWriteResult=FAIL at WriteTag Status=0x{write.StatusCode:X8}");
-                if (sleep20)
-                    WriteDiag($"{tag} Final=FAIL");
+                WriteDiag($"[Write] FinalWriteResult=FAIL at WriteTag Status=0x{write.StatusCode:X8}");
                 return Fail<TagAccessResponse>(write.StatusCode, write.Message);
-            }
-
-            // Controlled experiment R8 only: CAREHR_UHF_WRITE_TEST=Sleep20 inserts vendor Sleep(20).
-            // No polling, no other algorithm changes. Default/baseline path stays unchanged.
-            if (sleep20)
-            {
-                WriteDiag($"{tag} SleepMs=20");
-                Thread.Sleep(20);
             }
 
             var respSw = System.Diagnostics.Stopwatch.StartNew();
             WriteDiag(
-                $"{tag} GetTagRespStart Command=0x{NativeConstants.IsoWriteTag:X4} Timeout={responseTimeoutMs} " +
-                $"ThreadId={threadId}");
+                $"[Write] GetTagRespStart Command=0x{NativeConstants.IsoWriteTag:X4} Timeout={responseTimeoutMs}");
             var resp = _driver.GetTagResp(NativeConstants.IsoWriteTag, responseTimeoutMs);
             respSw.Stop();
             WriteDiag(
-                $"{tag} GetTagRespResult Status=0x{resp.StatusCode:X8} Success={resp.Success} Message={resp.Message}");
-            WriteDiag($"{tag} GetTagRespElapsedMs={respSw.ElapsedMilliseconds}");
+                $"[Write] GetTagRespResult Status=0x{resp.StatusCode:X8} Success={resp.Success} Message={resp.Message} " +
+                $"ElapsedMs={respSw.ElapsedMilliseconds}");
             if (!resp.Success || resp.Value is null)
             {
-                WriteDiag($"{tag} FinalWriteResult=FAIL at GetTagResp Status=0x{resp.StatusCode:X8}");
-                if (sleep20)
-                    WriteDiag($"{tag} Final=FAIL");
+                WriteDiag($"[Write] FinalWriteResult=FAIL at GetTagResp Status=0x{resp.StatusCode:X8}");
                 return Fail<TagAccessResponse>(resp.StatusCode, resp.Message);
             }
 
-            WriteDiag($"{tag} FinalWriteResult=OK Status=0x{resp.StatusCode:X8}");
-            if (sleep20)
-                WriteDiag($"{tag} Final=PASS");
+            WriteDiag($"[Write] FinalWriteResult=OK Status=0x{resp.StatusCode:X8}");
             return Ok(resp.StatusCode, resp.Message, ToTagAccessResponse(resp.Value));
         }
         catch (NativeException ex)
         {
-            var tag = IsSleep20DiagEnabled() ? "[TEST-SLEEP20]" : "[Write]";
-            WriteDiag($"{tag} FinalWriteResult=EXCEPTION {ex.Message}");
-            if (IsSleep20DiagEnabled())
-                WriteDiag($"{tag} Final=FAIL");
+            WriteDiag($"[Write] FinalWriteResult=EXCEPTION {ex.Message}");
             throw new SdkException(ex.Message, ex);
         }
     }
@@ -333,29 +313,20 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
             var read = _driver.ReadTag(option, accessPassword!, (byte)memBank, wordPtr, wordCount);
             WriteDiag(
                 $"[Verify] ReadTagResult Status=0x{read.StatusCode:X8} Success={read.Success} Message={read.Message}");
-            WriteDiag(
-                $"[VerifyTest] ReadTagResult Status=0x{read.StatusCode:X8} Success={read.Success} Message={read.Message}");
             if (!read.Success)
             {
                 WriteDiag($"[Verify] FailAt=ReadTag Status=0x{read.StatusCode:X8}");
-                WriteDiag($"[VerifyTest] FailAt=ReadTag Status=0x{read.StatusCode:X8}");
                 return Fail<TagReadData>(read.StatusCode, read.Message);
             }
 
             var maxBytes = Math.Max(wordCount * 2, 2);
             // IsoReadTag=0x0003 is the Gen2 read command id (GetReadTagResp is the dedicated poll API).
-            WriteDiag(
-                $"[Verify] GetReadTagRespStart Command=0x{NativeConstants.IsoReadTag:X4} " +
-                $"Timeout={responseTimeoutMs} MaxBytes={maxBytes}");
             var resp = _driver.GetReadTagResp(responseTimeoutMs, maxBytes);
             WriteDiag(
                 $"[Verify] GetReadTagRespResult Status=0x{resp.StatusCode:X8} Success={resp.Success} Message={resp.Message}");
-            WriteDiag(
-                $"[VerifyTest] GetReadTagRespResult Status=0x{resp.StatusCode:X8} Success={resp.Success} Message={resp.Message}");
             if (!resp.Success || resp.Value is null)
             {
                 WriteDiag($"[Verify] FailAt=GetReadTagResp Status=0x{resp.StatusCode:X8}");
-                WriteDiag($"[VerifyTest] FailAt=GetReadTagResp Status=0x{resp.StatusCode:X8}");
                 return Fail<TagReadData>(resp.StatusCode, resp.Message);
             }
 
@@ -364,14 +335,11 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
                 ? "(empty)"
                 : Convert.ToHexString(resp.Value.Data);
             WriteDiag($"[Verify] ReadDataLength={dataLen} ReadDataHex={dataHex}");
-            WriteDiag($"[VerifyTest] ActualEpcHex={dataHex}");
-            WriteDiag("[Verify] FailAt=NONE ReadPath=OK");
             return Ok(resp.StatusCode, resp.Message, ToTagReadData(resp.Value));
         }
         catch (NativeException ex)
         {
             WriteDiag($"[Verify] FailAt=EXCEPTION {ex.Message}");
-            WriteDiag($"[VerifyTest] FailAt=EXCEPTION {ex.Message}");
             throw new SdkException(ex.Message, ex);
         }
     }
@@ -387,7 +355,7 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
             var maskEpc = mask is null || mask.Length == 0 ? "UNKNOWN" : Convert.ToHexString(mask);
             WriteDiag(
                 $"[Write] SelectStart MaskEpc={maskEpc} MaskLength={(mask?.Length ?? 0)} " +
-                $"MaskPtr={maskPtr} MaskBits={maskBits} ThreadId={Environment.CurrentManagedThreadId}");
+                $"MaskPtr={maskPtr} MaskBits={maskBits}");
             var result = _driver.SetSelectMask(maskPtr, maskBits, mask!);
             WriteDiag(
                 $"[Write] SelectResult Status=0x{result.StatusCode:X8} Success={result.Success} Message={result.Message}");
@@ -446,19 +414,8 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
     // ----------------- Mapping -----------------
 
     /// <summary>
-    /// Controlled R8 experiment only. Set env <c>CAREHR_UHF_WRITE_TEST=Sleep20</c> to insert
-    /// <see cref="Thread.Sleep(int)"/> 20ms between WriteTag and GetTagResp. Default = baseline (no sleep).
-    /// </summary>
-    internal static bool IsSleep20DiagEnabled()
-    {
-        var mode = Environment.GetEnvironmentVariable("CAREHR_UHF_WRITE_TEST");
-        return string.Equals(mode, "Sleep20", StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    /// Temporary Write-path diagnostic (Select / WriteTag / GetTagResp). Does not change algorithm
-    /// unless <see cref="IsSleep20DiagEnabled"/> is set for the R8 controlled test.
-    /// Writes to %LocalAppData%\CareHR\UhfCardWriter\logs\write-diag.log — never logs password bytes.
+    /// Write/Verify path diagnostic to %LocalAppData%\CareHR\UhfCardWriter\logs\write-diag.log.
+    /// Never logs password bytes. Does not change RFID algorithm.
     /// </summary>
     private static void WriteDiag(string message)
     {
@@ -472,7 +429,6 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
             Directory.CreateDirectory(dir);
             var line = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}\t{message}";
             File.AppendAllText(Path.Combine(dir, "write-diag.log"), line + Environment.NewLine);
-            System.Diagnostics.Trace.WriteLine(line);
         }
         catch
         {

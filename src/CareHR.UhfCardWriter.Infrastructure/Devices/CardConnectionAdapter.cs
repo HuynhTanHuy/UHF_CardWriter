@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using CareHR.UhfCardWriter.Application.Abstractions;
 using CareHR.UhfCardWriter.Application.Devices;
 using CareHR.UhfCardWriter.Sdk;
@@ -14,9 +13,6 @@ namespace CareHR.UhfCardWriter.Infrastructure.Devices;
 /// </remarks>
 public sealed class CardConnectionAdapter : ICardConnection
 {
-    /// <summary>Optional sink for DevicePara gate diagnostics (wired by App to AppLog).</summary>
-    public static Action<string>? DeviceParaDiag { get; set; }
-
     /// <summary>Serializes GetDevicePara/SetDevicePara only — driver is not thread-safe.</summary>
     private readonly SemaphoreSlim _deviceParaGate = new(1, 1);
 
@@ -58,24 +54,17 @@ public sealed class CardConnectionAdapter : ICardConnection
 
     /// <inheritdoc />
     public DeviceResult<DeviceParameters> GetDevicePara() =>
-        WithDeviceParaGate(
-            "Get",
-            () => DeviceExceptionTranslator.Execute(() =>
-                SdkMapping.ToDevice(_sdk.Connection.GetDevicePara(), SdkMapping.ToDeviceParameters)));
+        WithDeviceParaGate(() => DeviceExceptionTranslator.Execute(() =>
+            SdkMapping.ToDevice(_sdk.Connection.GetDevicePara(), SdkMapping.ToDeviceParameters)));
 
     /// <inheritdoc />
     public DeviceResult SetDevicePara(DeviceParameters para) =>
-        WithDeviceParaGate(
-            "Set",
-            () => DeviceExceptionTranslator.Execute(() =>
-                SdkMapping.ToDevice(_sdk.Connection.SetDevicePara(SdkMapping.ToSdkDeviceParameters(para)))));
+        WithDeviceParaGate(() => DeviceExceptionTranslator.Execute(() =>
+            SdkMapping.ToDevice(_sdk.Connection.SetDevicePara(SdkMapping.ToSdkDeviceParameters(para)))));
 
-    private T WithDeviceParaGate<T>(string operation, Func<T> action)
+    private T WithDeviceParaGate<T>(Func<T> action)
     {
-        var threadId = Environment.CurrentManagedThreadId;
-        Diag($"[DevicePara] WaitStart Operation={operation} ThreadId={threadId}");
         _deviceParaGate.Wait();
-        Diag($"[DevicePara] Acquired Operation={operation} ThreadId={threadId}");
         try
         {
             return action();
@@ -83,13 +72,6 @@ public sealed class CardConnectionAdapter : ICardConnection
         finally
         {
             _deviceParaGate.Release();
-            Diag($"[DevicePara] Released Operation={operation} ThreadId={threadId}");
         }
-    }
-
-    private static void Diag(string message)
-    {
-        Trace.WriteLine(message);
-        DeviceParaDiag?.Invoke(message);
     }
 }

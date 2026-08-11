@@ -2,7 +2,6 @@ using CareHR.UhfCardWriter.App.Configuration;
 using CareHR.UhfCardWriter.App.Diagnostics;
 using CareHR.UhfCardWriter.App.Forms;
 using CareHR.UhfCardWriter.Infrastructure.DependencyInjection;
-using CareHR.UhfCardWriter.Infrastructure.Devices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -68,7 +67,6 @@ public static class CompositionRoot
                 ? settings.Hospitals[0].Id
                 : string.Empty;
         });
-        CardConnectionAdapter.DeviceParaDiag = msg => AppLog.Info("DevicePara", msg);
         services.AddTransient<MainForm>();
 
         return services.BuildServiceProvider();

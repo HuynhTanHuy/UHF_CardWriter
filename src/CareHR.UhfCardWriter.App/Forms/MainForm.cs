@@ -492,8 +492,6 @@ public sealed partial class MainForm : Form
         if (_busy || _batchRunning || !_connectionService.IsConnected)
             return;
 
-        LogRfPowerSelectionDiagnostic();
-
         if (!TryGetSelectedRfPowerDbm(out var requested, out var parseFailReason))
         {
             MessageBox.Show(
@@ -504,17 +502,13 @@ public sealed partial class MainForm : Form
                 "RF Power",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
-            AppLog.Info("RFPower", "[RFPower] Validation Result=FAIL");
             return;
         }
-
-        AppLog.Info("RFPower", $"[RFPower] Validation Result=PASS ParsedValue={requested}");
 
         SetBusy(true);
         try
         {
             LogOp("RFPower", $"[RFPower] SetStart Requested={requested}");
-            LogOp("DevicePara", $"[DevicePara] SetStart ThreadId={Environment.CurrentManagedThreadId} Op=RfPower");
             AppLog.Info("RFPower", $"[RFPower] SetStart Requested={requested}");
 
             var set = await Task.Run(() => _connectionService.SetRfPower(requested)).ConfigureAwait(true);
@@ -543,12 +537,6 @@ public sealed partial class MainForm : Form
             LogOp(
                 "RFPower",
                 $"[RFPower] SetResult Status=0x{set.VendorStatusCode:X8} Success=true Requested={requested} Actual={set.Value}");
-            LogOp(
-                "DevicePara",
-                $"[DevicePara] SetResult Status=0x{set.VendorStatusCode:X8} Success=true");
-            LogOp(
-                "DevicePara",
-                $"[DevicePara] VerifyResult Status=0x{set.VendorStatusCode:X8} Actual={set.Value}");
             AppLog.Info(
                 "RFPower",
                 $"[RFPower] VerifyResult Status=0x{set.VendorStatusCode:X8} Actual={set.Value}");
@@ -609,8 +597,6 @@ public sealed partial class MainForm : Form
                 break;
         }
 
-        AppLog.Info("RFPower", $"[RFPower] ParsedValue={value}");
-
         if (value < DeviceConstants.RfPowerMinDbm || value > DeviceConstants.RfPowerMaxDbm)
         {
             failReason =
@@ -620,19 +606,6 @@ public sealed partial class MainForm : Form
 
         powerDbm = (byte)value;
         return true;
-    }
-
-    private void LogRfPowerSelectionDiagnostic()
-    {
-        var selected = cboRfPower.SelectedItem;
-        AppLog.Info(
-            "RFPower",
-            $"[RFPower] SelectedIndex={cboRfPower.SelectedIndex} " +
-            $"SelectedItem={selected?.ToString() ?? "(null)"} " +
-            $"SelectedItemType={selected?.GetType().FullName ?? "(null)"} " +
-            $"SelectedValue={cboRfPower.SelectedValue?.ToString() ?? "(null)"} " +
-            $"Text={cboRfPower.Text} " +
-            $"ValidationMin={DeviceConstants.RfPowerMinDbm} ValidationMax={DeviceConstants.RfPowerMaxDbm}");
     }
 
     private void ApplyRfPowerSelection(byte powerDbm)
