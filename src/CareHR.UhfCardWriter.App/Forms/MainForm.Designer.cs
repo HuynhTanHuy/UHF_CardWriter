@@ -21,10 +21,15 @@ partial class MainForm
     private Control lblReader = null!;
     private ComboBox cboReader = null!;
     private Label lblReaderStatus = null!;
+    private Control lblConnection = null!;
     private Control lblOutInterface = null!;
     private ComboBox cboOutInterface = null!;
     private Button btnGetOutInterface = null!;
     private Button btnSetOutInterface = null!;
+    private Control lblRfPower = null!;
+    private ComboBox cboRfPower = null!;
+    private Button btnGetRfPower = null!;
+    private Button btnSetRfPower = null!;
     private Control lblHospital = null!;
     private ComboBox cboHospital = null!;
     private Control lblCardType = null!;
@@ -47,6 +52,8 @@ partial class MainForm
     private Button btnConnect = null!;
     private Button btnStart = null!;
     private Button btnStop = null!;
+    private const int DebugRowIndex = 10;
+    private const int ActionRowIndex = 11;
     private Panel cardPreviewPanel = null!;
     private Control lblFactoryCaption = null!;
     private Label lblFactoryEpc = null!;
@@ -241,15 +248,14 @@ partial class MainForm
         buttonBar = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 3,
+            ColumnCount = 2,
             RowCount = 1,
             Padding = new Padding(0, 6, 0, 4),
             BackColor = UiColors.White,
             Margin = new Padding(0),
         };
-        buttonBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
-        buttonBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
-        buttonBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.34f));
+        buttonBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
+        buttonBar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50f));
 
         btnConnect = CreateActionButton("Connect", UiColors.CareHrBlue, UiGlyphs.Connect);
         btnStart = CreateActionButton("Start", UiColors.Success, UiGlyphs.Play);
@@ -257,23 +263,25 @@ partial class MainForm
         btnConnect.Click += BtnConnect_Click;
         btnStart.Click += BtnStart_Click;
         btnStop.Click += BtnStop_Click;
-        buttonBar.Controls.Add(btnConnect, 0, 0);
-        buttonBar.Controls.Add(btnStart, 1, 0);
-        buttonBar.Controls.Add(btnStop, 2, 0);
+        btnConnect.Margin = new Padding(0, 2, 0, 2);
+        buttonBar.Controls.Add(btnStart, 0, 0);
+        buttonBar.Controls.Add(btnStop, 1, 0);
 
+        // Rows: Reader, Connection, Out Interface, RF Power, Hospital, Card Type,
+        // Batch, Start, End, Current, Debug, Actions, filler
         leftLayout = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 2,
-            RowCount = 11,
-            Padding = new Padding(14, 14, 14, 10),
+            RowCount = 13,
+            Padding = new Padding(14, 12, 14, 10),
         };
-        leftLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 118));
+        leftLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 132));
         leftLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-        for (var i = 0; i < 8; i++)
-            leftLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40));
-        leftLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));
-        leftLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58));
+        for (var i = 0; i < 10; i++)
+            leftLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        leftLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 0)); // debug
+        leftLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 58)); // Start/Stop
         leftLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
 
         lblReader = CreateFieldLabel(UiGlyphs.Reader, "Reader");
@@ -285,7 +293,7 @@ partial class MainForm
             Margin = new Padding(0, 4, 0, 4),
         };
         readerRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
-        readerRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100));
+        readerRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 88));
         cboReader = CreateCombo();
         lblReaderStatus = new Label
         {
@@ -299,6 +307,10 @@ partial class MainForm
         readerRow.Controls.Add(lblReaderStatus, 1, 0);
         leftLayout.Controls.Add(lblReader, 0, 0);
         leftLayout.Controls.Add(readerRow, 1, 0);
+
+        lblConnection = CreateFieldLabel(UiGlyphs.Connect, "Connection");
+        leftLayout.Controls.Add(lblConnection, 0, 1);
+        leftLayout.Controls.Add(WrapInput(btnConnect), 1, 1);
 
         lblOutInterface = CreateFieldLabel(UiGlyphs.Reader, "Out Interface");
         var outInterfaceRow = new TableLayoutPanel
@@ -346,33 +358,81 @@ partial class MainForm
         outInterfaceRow.Controls.Add(cboOutInterface, 0, 0);
         outInterfaceRow.Controls.Add(btnGetOutInterface, 1, 0);
         outInterfaceRow.Controls.Add(btnSetOutInterface, 2, 0);
-        leftLayout.Controls.Add(lblOutInterface, 0, 1);
-        leftLayout.Controls.Add(outInterfaceRow, 1, 1);
+        leftLayout.Controls.Add(lblOutInterface, 0, 2);
+        leftLayout.Controls.Add(outInterfaceRow, 1, 2);
+
+        lblRfPower = CreateFieldLabel(UiGlyphs.Reader, "RF Power (dBm)");
+        var rfPowerRow = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 3,
+            RowCount = 1,
+            Margin = new Padding(0, 4, 0, 4),
+        };
+        rfPowerRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        rfPowerRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 56));
+        rfPowerRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 56));
+        cboRfPower = CreateCombo();
+        cboRfPower.DropDownStyle = ComboBoxStyle.DropDownList;
+        // Populate as int (not byte) so SelectedItem pattern-match / Equals stay consistent.
+        for (var p = (int)DeviceConstants.RfPowerMinDbm; p <= DeviceConstants.RfPowerMaxDbm; p++)
+            cboRfPower.Items.Add(p);
+        cboRfPower.SelectedItem = 26;
+        cboRfPower.Enabled = false;
+        btnGetRfPower = new Button
+        {
+            Text = "Get",
+            Dock = DockStyle.Fill,
+            Margin = new Padding(4, 0, 0, 0),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = UiColors.FieldFill,
+            ForeColor = UiColors.TextPrimary,
+            Enabled = false,
+        };
+        btnGetRfPower.FlatAppearance.BorderColor = UiColors.Border;
+        btnGetRfPower.Click += BtnGetRfPower_Click;
+        btnSetRfPower = new Button
+        {
+            Text = "Set",
+            Dock = DockStyle.Fill,
+            Margin = new Padding(4, 0, 0, 0),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = UiColors.CareHrBlue,
+            ForeColor = Color.White,
+            Enabled = false,
+        };
+        btnSetRfPower.FlatAppearance.BorderSize = 0;
+        btnSetRfPower.Click += BtnSetRfPower_Click;
+        rfPowerRow.Controls.Add(cboRfPower, 0, 0);
+        rfPowerRow.Controls.Add(btnGetRfPower, 1, 0);
+        rfPowerRow.Controls.Add(btnSetRfPower, 2, 0);
+        leftLayout.Controls.Add(lblRfPower, 0, 3);
+        leftLayout.Controls.Add(rfPowerRow, 1, 3);
 
         lblHospital = CreateFieldLabel(UiGlyphs.Hospital, "Hospital");
         cboHospital = CreateCombo();
-        leftLayout.Controls.Add(lblHospital, 0, 2);
-        leftLayout.Controls.Add(WrapInput(cboHospital), 1, 2);
+        leftLayout.Controls.Add(lblHospital, 0, 4);
+        leftLayout.Controls.Add(WrapInput(cboHospital), 1, 4);
 
         lblCardType = CreateFieldLabel(UiGlyphs.CardType, "Card Type");
         cboCardType = CreateCombo();
-        leftLayout.Controls.Add(lblCardType, 0, 3);
-        leftLayout.Controls.Add(WrapInput(cboCardType), 1, 3);
+        leftLayout.Controls.Add(lblCardType, 0, 5);
+        leftLayout.Controls.Add(WrapInput(cboCardType), 1, 5);
 
         lblBatch = CreateFieldLabel(UiGlyphs.Batch, "Batch");
         txtBatch = CreateTextBox();
-        leftLayout.Controls.Add(lblBatch, 0, 4);
-        leftLayout.Controls.Add(WrapInput(txtBatch), 1, 4);
+        leftLayout.Controls.Add(lblBatch, 0, 6);
+        leftLayout.Controls.Add(WrapInput(txtBatch), 1, 6);
 
         lblStart = CreateFieldLabel(UiGlyphs.Start, "Start");
         txtStart = CreateTextBox();
-        leftLayout.Controls.Add(lblStart, 0, 5);
-        leftLayout.Controls.Add(WrapInput(txtStart), 1, 5);
+        leftLayout.Controls.Add(lblStart, 0, 7);
+        leftLayout.Controls.Add(WrapInput(txtStart), 1, 7);
 
         lblEnd = CreateFieldLabel(UiGlyphs.End, "End");
         txtEnd = CreateTextBox();
-        leftLayout.Controls.Add(lblEnd, 0, 6);
-        leftLayout.Controls.Add(WrapInput(txtEnd), 1, 6);
+        leftLayout.Controls.Add(lblEnd, 0, 8);
+        leftLayout.Controls.Add(WrapInput(txtEnd), 1, 8);
 
         lblCurrent = CreateFieldLabel(UiGlyphs.Current, "Current");
         txtCurrent = CreateTextBox();
@@ -380,11 +440,11 @@ partial class MainForm
         txtCurrent.BackColor = UiColors.FieldFill;
         txtCurrent.TabStop = false;
         var currentTip = new ToolTip();
-        currentTip.SetToolTip(txtCurrent, "Current sequence — advances after success");
-        currentTip.SetToolTip(lblCurrent, "Current sequence — advances after success");
+        currentTip.SetToolTip(txtCurrent, "Current serial — advances only after Write + Verify + Register success");
+        currentTip.SetToolTip(lblCurrent, "Current serial — advances only after Write + Verify + Register success");
         lblCurrentHint = new Label { Visible = false, Height = 0 };
-        leftLayout.Controls.Add(lblCurrent, 0, 7);
-        leftLayout.Controls.Add(WrapInput(txtCurrent), 1, 7);
+        leftLayout.Controls.Add(lblCurrent, 0, 9);
+        leftLayout.Controls.Add(WrapInput(txtCurrent), 1, 9);
 
         debugPanel = new Panel { Dock = DockStyle.Fill, Visible = false };
         var debugLayout = new TableLayoutPanel
@@ -413,10 +473,10 @@ partial class MainForm
         debugLayout.Controls.Add(txtCurrentEpc, 1, 1);
         debugPanel.Controls.Add(debugLayout);
         leftLayout.SetColumnSpan(debugPanel, 2);
-        leftLayout.Controls.Add(debugPanel, 0, 8);
+        leftLayout.Controls.Add(debugPanel, 0, DebugRowIndex);
 
         leftLayout.SetColumnSpan(buttonBar, 2);
-        leftLayout.Controls.Add(buttonBar, 0, 9);
+        leftLayout.Controls.Add(buttonBar, 0, ActionRowIndex);
 
         leftShell.Controls.Add(leftLayout, 0, 0);
         leftPanel.Controls.Add(leftShell);
@@ -547,8 +607,8 @@ partial class MainForm
     private void SetDebugRowVisible(bool visible)
     {
         debugPanel.Visible = visible;
-        if (leftLayout.RowStyles.Count > 7)
-            leftLayout.RowStyles[7].Height = visible ? 72f : 0f;
+        if (leftLayout.RowStyles.Count > DebugRowIndex)
+            leftLayout.RowStyles[DebugRowIndex].Height = visible ? 72f : 0f;
     }
 
     private static Control CreateCenteredCaption(string glyph, string text)

@@ -59,4 +59,46 @@ public sealed class CardRegistrationService
             throw new OperationException("Card registration failed.", ex);
         }
     }
+
+    /// <summary>
+    /// Checks whether a scanned logical card number already exists in CareHR for the hospital.
+    /// </summary>
+    public CardExistenceResult Exists(string hospitalId, string rfidCardNumber)
+    {
+        if (string.IsNullOrWhiteSpace(hospitalId))
+            return CardExistenceResult.Failed("Hospital id is required for existence check.");
+
+        if (string.IsNullOrWhiteSpace(rfidCardNumber))
+            return CardExistenceResult.NotFound("Empty card number.");
+
+        try
+        {
+            return _registrar.Exists(hospitalId.Trim(), rfidCardNumber.Trim());
+        }
+        catch (Exception ex)
+        {
+            return CardExistenceResult.Failed("Card existence check failed: " + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Next serial for HospitalNumber + Batch prefix (MAX matching serial + 1, or 1 if none).
+    /// </summary>
+    public NextSerialResult GetNextSerial(string hospitalId, string numberPrefix, int serialWidth)
+    {
+        if (string.IsNullOrWhiteSpace(hospitalId))
+            return NextSerialResult.Fail("Hospital id is required for next serial.");
+
+        if (string.IsNullOrWhiteSpace(numberPrefix))
+            return NextSerialResult.Fail("Number prefix is required for next serial.");
+
+        try
+        {
+            return _registrar.GetNextSerial(hospitalId.Trim(), numberPrefix.Trim(), serialWidth);
+        }
+        catch (Exception ex)
+        {
+            return NextSerialResult.Fail("Next serial resolve failed: " + ex.Message);
+        }
+    }
 }

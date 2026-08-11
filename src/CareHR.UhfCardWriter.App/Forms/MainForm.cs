@@ -17,6 +17,7 @@ public sealed partial class MainForm : Form
     private readonly CardConnectionService _connectionService;
     private readonly CardScanningService _scanningService;
     private readonly CardWriteOrchestrator _orchestrator;
+    private readonly CardRegistrationService _registrationService;
     private readonly AppSettings _settings;
     private readonly Dictionary<string, string> _timings = new(StringComparer.OrdinalIgnoreCase);
 
@@ -25,6 +26,7 @@ public sealed partial class MainForm : Form
     private bool _busy;
     private bool _debugMode;
     private UiState _uiState = UiState.Disconnected;
+    private bool _resolvingSerial;
 
     private int _sessionWritten;
     private int _sessionSuccess;
@@ -36,11 +38,13 @@ public sealed partial class MainForm : Form
         CardConnectionService connectionService,
         CardScanningService scanningService,
         CardWriteOrchestrator orchestrator,
+        CardRegistrationService registrationService,
         IOptions<AppSettings> options)
     {
         _connectionService = connectionService ?? throw new ArgumentNullException(nameof(connectionService));
         _scanningService = scanningService ?? throw new ArgumentNullException(nameof(scanningService));
         _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
+        _registrationService = registrationService ?? throw new ArgumentNullException(nameof(registrationService));
         ArgumentNullException.ThrowIfNull(options);
         _settings = options.Value ?? throw new ArgumentNullException(nameof(options));
 
@@ -68,7 +72,7 @@ public sealed partial class MainForm : Form
 
         txtStart.TextChanged += (_, _) =>
         {
-            if (_batchRunning)
+            if (_batchRunning || _resolvingSerial)
                 return;
             SyncCurrentFromStart();
             RefreshTargetCardPreview();
@@ -81,10 +85,20 @@ public sealed partial class MainForm : Form
         };
         txtBatch.TextChanged += (_, _) =>
         {
-            if (!_batchRunning)
-                RefreshTargetCardPreview();
+            if (_batchRunning || _resolvingSerial)
+                return;
+            ResolveNextSerialFromDb();
+            RefreshTargetCardPreview();
+            RefreshBatchCounters();
         };
-        cboHospital.SelectedIndexChanged += (_, _) => RefreshTargetCardPreview();
+        cboHospital.SelectedIndexChanged += (_, _) =>
+        {
+            if (_batchRunning || _resolvingSerial)
+                return;
+            ResolveNextSerialFromDb();
+            RefreshTargetCardPreview();
+            RefreshBatchCounters();
+        };
         txtCurrent.TextChanged += (_, _) =>
         {
             if (!_batchRunning)
@@ -92,6 +106,7 @@ public sealed partial class MainForm : Form
         };
 
         RefreshReaders();
+        ResolveNextSerialFromDb();
         RefreshTargetCardPreview();
         RefreshBatchCounters();
         ApplyDebugVisibility();
@@ -230,6 +245,7 @@ public sealed partial class MainForm : Form
             SetUiState(UiState.Ready, "Reader connected. Set range and press Start.");
             RefreshConnectionChrome();
             LoadOutInterfaceAfterConnect();
+            LoadRfPowerAfterConnect();
         }
         catch (Exception ex)
         {
@@ -360,6 +376,208 @@ public sealed partial class MainForm : Form
         // Unknown vendor value: keep combo unchanged but log name via FormatOutInterface.
     }
 
+    private async void BtnGetRfPower_Click(object? sender, EventArgs e)
+    {
+        if (_busy || _batchRunning || !_connectionService.IsConnected)
+            return;
+
+        SetBusy(true);
+        try
+        {
+            LogOp("RFPower", "[RFPower] GetStart");
+            AppLog.Info("RFPower", "[RFPower] GetStart");
+            var result = await Task.Run(() => _connectionService.GetRfPower()).ConfigureAwait(true);
+            if (!result.Success)
+            {
+                var msg = UserMessage.ForDeviceOrOperation(result.Message);
+                LogOp("RFPower", $"[RFPower] GetResult Success=false {msg}");
+                AppLog.Warn("RFPower", $"[RFPower] GetResult Success=false Message={result.Message}");
+                return;
+            }
+
+            ApplyRfPowerSelection(result.Value);
+            LogOp("RFPower", $"[RFPower] GetResult Success=true Actual={result.Value}");
+            AppLog.Info("RFPower", $"[RFPower] Current={result.Value}");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Presentation", "Get RF Power failed", ex);
+            LogOp("RFPower", UserMessage.ForException(ex));
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private async void BtnSetRfPower_Click(object? sender, EventArgs e)
+    {
+        if (_busy || _batchRunning || !_connectionService.IsConnected)
+            return;
+
+        LogRfPowerSelectionDiagnostic();
+
+        if (!TryGetSelectedRfPowerDbm(out var requested, out var parseFailReason))
+        {
+            MessageBox.Show(
+                this,
+                string.IsNullOrWhiteSpace(parseFailReason)
+                    ? $"Select RF Power ({DeviceConstants.RfPowerMinDbm}–{DeviceConstants.RfPowerMaxDbm} dBm)."
+                    : parseFailReason,
+                "RF Power",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+            AppLog.Info("RFPower", "[RFPower] Validation Result=FAIL");
+            return;
+        }
+
+        AppLog.Info("RFPower", $"[RFPower] Validation Result=PASS ParsedValue={requested}");
+
+        SetBusy(true);
+        try
+        {
+            LogOp("RFPower", $"[RFPower] SetStart Requested={requested}");
+            AppLog.Info("RFPower", $"[RFPower] SetStart Requested={requested}");
+
+            var set = await Task.Run(() => _connectionService.SetRfPower(requested)).ConfigureAwait(true);
+            if (!set.Success)
+            {
+                var msg = UserMessage.ForDeviceOrOperation(set.Message);
+                LogOp("RFPower", $"[RFPower] SetResult Success=false {msg}");
+                AppLog.Warn("RFPower", $"[RFPower] SetResult Success=false Message={set.Message}");
+                MessageBox.Show(
+                    this,
+                    "Không thể thiết lập RF Power. " + msg,
+                    "RF Power",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                // Do not keep a failed requested value — reload last known from reader if possible.
+                var fallback = await Task.Run(() => _connectionService.GetRfPower()).ConfigureAwait(true);
+                if (fallback.Success)
+                    ApplyRfPowerSelection(fallback.Value);
+                return;
+            }
+
+            ApplyRfPowerSelection(set.Value);
+            LogOp("RFPower", $"[RFPower] SetResult Success=true Requested={requested} Actual={set.Value}");
+            AppLog.Info("RFPower", $"[RFPower] Verify Current={set.Value}");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Presentation", "Set RF Power failed", ex);
+            LogOp("RFPower", UserMessage.ForException(ex));
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private async void LoadRfPowerAfterConnect()
+    {
+        try
+        {
+            LogOp("RFPower", "[RFPower] GetStart");
+            AppLog.Info("RFPower", "[RFPower] GetStart");
+            var result = await Task.Run(() => _connectionService.GetRfPower()).ConfigureAwait(true);
+            if (!result.Success)
+            {
+                LogOp("RFPower", $"[RFPower] GetResult Success=false {UserMessage.ForDeviceOrOperation(result.Message)}");
+                AppLog.Warn("RFPower", $"[RFPower] GetResult Success=false Message={result.Message}");
+                return;
+            }
+
+            ApplyRfPowerSelection(result.Value);
+            LogOp("RFPower", $"[RFPower] GetResult Success=true Actual={result.Value}");
+            AppLog.Info("RFPower", $"[RFPower] Current={result.Value}");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Presentation", "Load RF Power failed", ex);
+            LogOp("RFPower", UserMessage.ForException(ex));
+        }
+    }
+
+    /// <summary>
+    /// Reads combo selection as dBm. Items are stored as <see cref="int"/> 0..33.
+    /// Accepts boxed int/byte for resilience; rejects null / non-numeric / out of range.
+    /// </summary>
+    private bool TryGetSelectedRfPowerDbm(out byte powerDbm, out string failReason)
+    {
+        powerDbm = 0;
+        failReason = string.Empty;
+
+        var selected = cboRfPower.SelectedItem;
+        if (selected is null || cboRfPower.SelectedIndex < 0)
+        {
+            failReason = $"Select RF Power ({DeviceConstants.RfPowerMinDbm}–{DeviceConstants.RfPowerMaxDbm} dBm).";
+            return false;
+        }
+
+        int value;
+        switch (selected)
+        {
+            case int i:
+                value = i;
+                break;
+            case byte b:
+                value = b;
+                break;
+            case short s:
+                value = s;
+                break;
+            case long l when l is >= int.MinValue and <= int.MaxValue:
+                value = (int)l;
+                break;
+            default:
+                if (!int.TryParse(
+                        Convert.ToString(selected, System.Globalization.CultureInfo.InvariantCulture),
+                        System.Globalization.NumberStyles.Integer,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out value))
+                {
+                    failReason = $"Select RF Power ({DeviceConstants.RfPowerMinDbm}–{DeviceConstants.RfPowerMaxDbm} dBm).";
+                    return false;
+                }
+
+                break;
+        }
+
+        AppLog.Info("RFPower", $"[RFPower] ParsedValue={value}");
+
+        if (value < DeviceConstants.RfPowerMinDbm || value > DeviceConstants.RfPowerMaxDbm)
+        {
+            failReason =
+                $"RF Power must be {DeviceConstants.RfPowerMinDbm}–{DeviceConstants.RfPowerMaxDbm} dBm.";
+            return false;
+        }
+
+        powerDbm = (byte)value;
+        return true;
+    }
+
+    private void LogRfPowerSelectionDiagnostic()
+    {
+        var selected = cboRfPower.SelectedItem;
+        AppLog.Info(
+            "RFPower",
+            $"[RFPower] SelectedIndex={cboRfPower.SelectedIndex} " +
+            $"SelectedItem={selected?.ToString() ?? "(null)"} " +
+            $"SelectedItemType={selected?.GetType().FullName ?? "(null)"} " +
+            $"SelectedValue={cboRfPower.SelectedValue?.ToString() ?? "(null)"} " +
+            $"Text={cboRfPower.Text} " +
+            $"ValidationMin={DeviceConstants.RfPowerMinDbm} ValidationMax={DeviceConstants.RfPowerMaxDbm}");
+    }
+
+    private void ApplyRfPowerSelection(byte powerDbm)
+    {
+        var asInt = (int)powerDbm;
+        // Items are int — Contains must use int (byte Equals fails against boxed int).
+        if (!cboRfPower.Items.Contains(asInt))
+            cboRfPower.Items.Add(asInt);
+        cboRfPower.SelectedItem = asInt;
+    }
+
     private static void LogNativeRuntimeDiagnostics()
     {
         var uhf = DiagnosticsInfo.DescribeNativeDll("UHFPrimeReader.dll");
@@ -384,6 +602,9 @@ public sealed partial class MainForm : Form
             MessageBox.Show(this, "Connect the reader first.", "Start", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
+
+        // Refresh next serial from DB before starting (HospitalNumber + Batch scope).
+        ResolveNextSerialFromDb();
 
         if (!TryParseRange(out var start, out var end, out var current, out var error))
         {
@@ -525,6 +746,37 @@ public sealed partial class MainForm : Form
                     break;
                 }
 
+                // Business guard: existing card or Exists API fail-closed — warn, skip write, keep batch + Current.
+                if (result.Stage is CardWriteJobStage.SkippedAlreadyRegistered
+                    or CardWriteJobStage.SkippedExistsCheckFailed)
+                {
+                    var existing = CardNumberBuilder.ToCardNumberFromEpcBytes(scan.Card.Identity.Epc);
+                    var existingDisplay = string.IsNullOrWhiteSpace(existing)
+                        ? scan.Card.Identity.EpcHex
+                        : FormatCardDisplay(existing);
+                    var warn = string.IsNullOrWhiteSpace(result.Message)
+                        ? (result.Stage == CardWriteJobStage.SkippedAlreadyRegistered
+                            ? $"Thẻ RFID {existingDisplay} đã được đăng ký."
+                            : $"Không thể kiểm tra thẻ RFID {existingDisplay}. Không thực hiện ghi.")
+                        : result.Message;
+                    LogOp("Guard", warn);
+                    SetUiState(UiState.WaitingForCard, warn);
+                    PlayFailBeep();
+                    RefreshBatchCounters();
+                    try
+                    {
+                        await Task.Delay(800, _batchCts.Token).ConfigureAwait(true);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        LogOp("Stop", "Batch stopped.");
+                        SetUiState(UiState.Ready, "Batch stopped.");
+                        break;
+                    }
+
+                    continue;
+                }
+
                 if (result.Success)
                 {
                     _sessionSuccess++;
@@ -656,6 +908,67 @@ public sealed partial class MainForm : Form
     {
         if (UiInputHelper.TryParsePositiveInt(txtStart.Text, out var start))
             txtCurrent.Text = start.ToString();
+    }
+
+    /// <summary>
+    /// Sets Current (and Start) to MAX(serial for HospitalNumber+Batch) + 1 from CareHR API.
+    /// Does not reset to 1 when DB already has numbers for the prefix.
+    /// </summary>
+    private void ResolveNextSerialFromDb()
+    {
+        if (_batchRunning)
+            return;
+
+        if (cboHospital.SelectedItem is not HospitalOption hospital ||
+            string.IsNullOrWhiteSpace(hospital.Id))
+        {
+            return;
+        }
+
+        var hospitalNumber = hospital.EffectiveHospitalNumber;
+        if (string.IsNullOrWhiteSpace(hospitalNumber))
+            return;
+
+        if (!UiInputHelper.TryParsePositiveInt(txtBatch.Text, out var batchNumber) || batchNumber <= 0)
+            return;
+
+        var batchWidth = Math.Max(1, _settings.Card.BatchNumberWidth);
+        var serialWidth = Math.Max(1, _settings.Card.SerialNumberWidth);
+        var batchPart = batchNumber.ToString("D" + batchWidth, System.Globalization.CultureInfo.InvariantCulture);
+        var prefix = hospitalNumber.Trim() + batchPart;
+
+        NextSerialResult next;
+        try
+        {
+            next = _registrationService.GetNextSerial(hospital.Id, prefix, serialWidth);
+        }
+        catch (Exception ex)
+        {
+            LogOp("Sequence", "Không lấy được serial tiếp theo: " + UserMessage.ForException(ex));
+            return;
+        }
+
+        if (!next.Success)
+        {
+            LogOp("Sequence", "Không lấy được serial tiếp theo: " + next.Message);
+            return;
+        }
+
+        _resolvingSerial = true;
+        try
+        {
+            txtCurrent.Text = next.NextSerial.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            // Keep Start aligned with next so range begins at the resolved serial.
+            txtStart.Text = txtCurrent.Text;
+            if (UiInputHelper.TryParsePositiveInt(txtEnd.Text, out var end) && end < next.NextSerial)
+                txtEnd.Text = Math.Max(next.NextSerial, next.NextSerial + 99).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+            LogOp("Sequence", $"Next serial for {prefix} = {next.NextSerial}.");
+        }
+        finally
+        {
+            _resolvingSerial = false;
+        }
     }
 
     private void ApplyDebugVisibility()
@@ -998,6 +1311,9 @@ public sealed partial class MainForm : Form
         cboOutInterface.Enabled = outInterfaceEnabled;
         btnGetOutInterface.Enabled = outInterfaceEnabled;
         btnSetOutInterface.Enabled = outInterfaceEnabled;
+        cboRfPower.Enabled = outInterfaceEnabled;
+        btnGetRfPower.Enabled = outInterfaceEnabled;
+        btnSetRfPower.Enabled = outInterfaceEnabled;
         txtCurrent.ReadOnly = true;
         txtCurrent.Enabled = true;
     }

@@ -13,6 +13,10 @@ public enum CardWriteJobStage
     Registering,
     Completed,
     WrittenButUnregistered,
+    /// <summary>Scanned EPC decodes to a card number already in CareHR — skip without write.</summary>
+    SkippedAlreadyRegistered,
+    /// <summary>Exists API unavailable — fail-closed skip without write.</summary>
+    SkippedExistsCheckFailed,
     Cancelled,
     Failed,
 }
@@ -109,6 +113,34 @@ public sealed class CardWriteJobResult
             scanned,
             verify,
             registration);
+
+    /// <summary>Business guard: scanned card already registered — do not write or register again.</summary>
+    public static CardWriteJobResult SkippedAlreadyRegistered(
+        CardInformation scanned,
+        string existingCardNumber,
+        string message) =>
+        new(
+            false,
+            CardWriteJobStage.SkippedAlreadyRegistered,
+            DeviceErrorCode.CardAlreadyRegistered,
+            string.IsNullOrWhiteSpace(message)
+                ? $"Thẻ RFID {existingCardNumber} đã được đăng ký."
+                : message,
+            scanned);
+
+    /// <summary>Business guard: existence check failed — do not write (fail-closed).</summary>
+    public static CardWriteJobResult SkippedExistsCheckFailed(
+        CardInformation scanned,
+        string scannedCardNumber,
+        string message) =>
+        new(
+            false,
+            CardWriteJobStage.SkippedExistsCheckFailed,
+            DeviceErrorCode.ExistsCheckFailed,
+            string.IsNullOrWhiteSpace(message)
+                ? $"Không thể kiểm tra thẻ RFID {scannedCardNumber}. Không thực hiện ghi."
+                : message,
+            scanned);
 
     public static CardWriteJobResult Fail(
         CardWriteJobStage stage,

@@ -168,4 +168,67 @@ public sealed class CardConnectionService
             return CardValidation.MapDeviceException<byte>(ex);
         }
     }
+
+    /// <summary>
+    /// Reads RF power from <c>DevicePara.RFIDPOWER</c> (vendor Desk Reader Get TxPower path).
+    /// </summary>
+    public DeviceResult<byte> GetRfPower()
+    {
+        try
+        {
+            if (!_connection.IsOpen)
+                return DeviceResult<byte>.Fail(DeviceErrorCode.ReaderNotConnected, "Reader must be connected before this operation.");
+
+            var get = _connection.GetDevicePara();
+            if (!get.Success || get.Value is null)
+                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message);
+
+            return DeviceResult<byte>.Ok(get.Value.RfidPower, get.Message);
+        }
+        catch (DeviceException ex)
+        {
+            return CardValidation.MapDeviceException<byte>(ex);
+        }
+    }
+
+    /// <summary>
+    /// Sets only <c>DevicePara.RFIDPOWER</c>: Get → modify RfidPower → SetDevicePara → Get verify
+    /// (same pattern as vendor Form1 btnSetTxPower).
+    /// </summary>
+    public DeviceResult<byte> SetRfPower(byte powerDbm)
+    {
+        try
+        {
+            if (!_connection.IsOpen)
+                return DeviceResult<byte>.Fail(DeviceErrorCode.ReaderNotConnected, "Reader must be connected before this operation.");
+
+            if (!DeviceConstants.IsValidRfPowerDbm(powerDbm))
+            {
+                return DeviceResult<byte>.Fail(
+                    DeviceErrorCode.InvalidParameter,
+                    $"RF Power must be {DeviceConstants.RfPowerMinDbm}–{DeviceConstants.RfPowerMaxDbm} dBm.");
+            }
+
+            var get = _connection.GetDevicePara();
+            if (!get.Success || get.Value is null)
+                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message);
+
+            var para = get.Value;
+            para.RfidPower = powerDbm;
+
+            var set = _connection.SetDevicePara(para);
+            if (!set.Success)
+                return DeviceResult<byte>.Fail(set.ErrorCode, set.Message);
+
+            var verify = _connection.GetDevicePara();
+            if (!verify.Success || verify.Value is null)
+                return DeviceResult<byte>.Fail(verify.ErrorCode, verify.Message);
+
+            return DeviceResult<byte>.Ok(verify.Value.RfidPower, verify.Message);
+        }
+        catch (DeviceException ex)
+        {
+            return CardValidation.MapDeviceException<byte>(ex);
+        }
+    }
 }

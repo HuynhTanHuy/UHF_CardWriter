@@ -59,4 +59,10 @@ public enum DeviceErrorCode
 
     /// <summary>CareHR registry persistence failed after a successful verify.</summary>
     RegistrationFailed,
+
+    /// <summary>Scanned card number is already registered in CareHR (business guard skip).</summary>
+    CardAlreadyRegistered,
+
+    /// <summary>Pre-write existence check could not be completed (fail-closed skip).</summary>
+    ExistsCheckFailed,
 }

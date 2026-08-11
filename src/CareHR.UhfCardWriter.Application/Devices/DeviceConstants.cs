@@ -60,4 +60,17 @@ public static class DeviceConstants
         ("RS485", OutInterfaceRs485),
         ("RS232", OutInterfaceRs232),
     ];
+
+    /// <summary>
+    /// Vendor Desk Reader sample <c>cmbTxPower</c> / CareHR RfidGateway range (dBm).
+    /// Unit confirmed by vendor UI label "RfPower（dbm）".
+    /// </summary>
+    public const byte RfPowerMinDbm = 0;
+
+    /// <summary>Vendor max RF power in dBm (cmbTxPower items 0..33).</summary>
+    public const byte RfPowerMaxDbm = 33;
+
+    /// <summary>True when <paramref name="power"/> is within vendor UI range 0..33 dBm.</summary>
+    public static bool IsValidRfPowerDbm(byte power) =>
+        power is >= RfPowerMinDbm and <= RfPowerMaxDbm;
 }
