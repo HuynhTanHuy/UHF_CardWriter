@@ -1,0 +1,23 @@
+# .NET build output
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+
+# Rider / IntelliJ
+.idea/
+
+# Debug symbols
+*.pdb
+
+# User-specific files
+*.user
+*.suo
+
+# Test output
+TestResults/
+
+# OS files
+.DS_Store
+Thumbs.db
