@@ -11,6 +11,7 @@ internal static class DiagnosticsExporter
         AppSettings settings,
         CardConnectionService connection,
         string? readerLabel,
+        bool authSessionReady,
         IEnumerable<string>? operationLines,
         IReadOnlyDictionary<string, string>? timings)
     {
@@ -22,11 +23,11 @@ internal static class DiagnosticsExporter
         sb.AppendLine($"Exported (local): {DateTime.Now:O}");
         sb.AppendLine();
         sb.AppendLine("=== Application ===");
-        sb.AppendLine(DiagnosticsInfo.Summarize(settings, connection.IsConnected, readerLabel));
+        sb.AppendLine(DiagnosticsInfo.Summarize(settings, connection.IsConnected, readerLabel, authSessionReady));
         sb.AppendLine();
 
         sb.AppendLine("=== Health ===");
-        foreach (var c in HealthChecker.Run(settings, connection, readerLabel))
+        foreach (var c in HealthChecker.Run(settings, connection, readerLabel, authSessionReady))
             sb.AppendLine($"{(c.Ready ? "OK" : "FAIL")}  {c.Name}: {c.Detail}");
         sb.AppendLine();
 
@@ -38,7 +39,7 @@ internal static class DiagnosticsExporter
         sb.AppendLine("=== Configuration summary (secrets redacted) ===");
         sb.AppendLine($"BaseUrl={settings.Api.BaseUrl}");
         sb.AppendLine($"CreateRfidCardPath={settings.Api.CreateRfidCardPath}");
-        sb.AppendLine($"BearerToken={(string.IsNullOrWhiteSpace(settings.Api.BearerToken) ? "(empty)" : "(set, length=" + settings.Api.BearerToken.Trim().Length + ")")}");
+        sb.AppendLine($"AuthSession={(authSessionReady ? "active" : "required")}");
         sb.AppendLine($"DefaultStatus={settings.Api.DefaultStatus}");
         sb.AppendLine($"DefaultIsActive={settings.Api.DefaultIsActive}");
         sb.AppendLine($"Reader.DefaultMode={settings.Reader.DefaultMode}");

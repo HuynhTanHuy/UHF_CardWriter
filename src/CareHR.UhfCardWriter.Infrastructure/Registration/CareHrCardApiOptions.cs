@@ -9,9 +9,6 @@ public sealed class CareHrCardApiOptions
     /// <summary>Base URL of the CareHR API (no trailing slash required).</summary>
     public string BaseUrl { get; set; } = string.Empty;
 
-    /// <summary>Bearer token for Authorization header (with or without "Bearer " prefix).</summary>
-    public string BearerToken { get; set; } = string.Empty;
-
     /// <summary>
     /// Relative path for create RFID card.
     /// CareHR production: <c>/api/rfid/cards</c>.

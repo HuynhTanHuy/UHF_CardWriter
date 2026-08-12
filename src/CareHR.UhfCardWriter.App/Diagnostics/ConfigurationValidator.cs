@@ -16,9 +16,6 @@ internal static class ConfigurationValidator
                  || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
             list.Add(new("CFG-API-URL", "Error", "Api.BaseUrl must be an absolute http/https URL."));
 
-        if (string.IsNullOrWhiteSpace(settings.Api.BearerToken))
-            list.Add(new("CFG-API-TOKEN", "Warning", "Api.BearerToken is empty. Register will fail until configured."));
-
         if (string.IsNullOrWhiteSpace(settings.Api.CreateRfidCardPath))
             list.Add(new("CFG-API-PATH", "Error", "Api.CreateRfidCardPath is empty."));
 

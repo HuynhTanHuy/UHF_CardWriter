@@ -91,7 +91,7 @@ internal static class DiagnosticsInfo
         };
     }
 
-    public static string Summarize(AppSettings settings, bool readerConnected, string? readerLabel)
+    public static string Summarize(AppSettings settings, bool readerConnected, string? readerLabel, bool authSessionReady)
     {
         var uhf = DescribeNativeDll("UHFPrimeReader.dll");
         var hid = DescribeNativeDll("hidapi.dll");
@@ -107,7 +107,7 @@ internal static class DiagnosticsInfo
             $"Log folder: {AppPaths.Logs}",
             $"API URL: {settings.Api.BaseUrl}",
             $"API path: {settings.Api.CreateRfidCardPath}",
-            $"Bearer token: {(string.IsNullOrWhiteSpace(settings.Api.BearerToken) ? "(empty)" : "(set)")}",
+            $"Auth session: {(authSessionReady ? "active" : "required")}",
             $"Hospitals: {settings.Hospitals.Count}",
             $"Card types: {settings.CardTypes.Count}",
             $"Native UHFPrimeReader.dll: {(NativeDllPresent ? $"present Arch={uhf.Arch} Ver={uhf.Version} Size={uhf.Size}" : "MISSING")}",

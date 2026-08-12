@@ -39,7 +39,7 @@ internal static class UserMessage
 
         return statusCode switch
         {
-            401 => "API authentication failed. Update Api.BearerToken in appsettings.json.",
+            401 => "API authentication failed. Authorize Card Writer from CareHR Frontend again.",
             403 => "Not authorized to create RFID cards. Check account permissions.",
             404 => "API endpoint not found. Check Api.BaseUrl and CreateRfidCardPath.",
             409 => "Conflict while registering the card. It may already exist.",

@@ -62,7 +62,8 @@ Edit `appsettings.json` next to the EXE, or use `appsettings.Local.json` for sec
 | Key | Purpose |
 |-----|---------|
 | `Api.BaseUrl` | CareHR API root |
-| `Api.BearerToken` | JWT (prefer Local file) |
+| `Api.BaseUrl` | CareHR API root |
+| JWT for Register | Via local bridge from CareHR Frontend (not in appsettings) |
 | `Api.CreateRfidCardPath` | `/api/rfid/cards` |
 | `Hospitals` / `CardTypes` | GUID catalog |
 | `Reader.*` / `Card.*` | Device and EPC defaults |

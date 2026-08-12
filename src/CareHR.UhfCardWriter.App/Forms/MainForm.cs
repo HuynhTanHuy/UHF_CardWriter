@@ -2,9 +2,11 @@ using System.Diagnostics;
 using CareHR.UhfCardWriter.App.Configuration;
 using CareHR.UhfCardWriter.App.Diagnostics;
 using CareHR.UhfCardWriter.App.Presentation;
+using CareHR.UhfCardWriter.Application.Abstractions;
 using CareHR.UhfCardWriter.Application.Devices;
 using CareHR.UhfCardWriter.Application.Models;
 using CareHR.UhfCardWriter.Application.Services;
+using CareHR.UhfCardWriter.Infrastructure.Registration;
 using Microsoft.Extensions.Options;
 
 namespace CareHR.UhfCardWriter.App.Forms;
@@ -18,6 +20,7 @@ public sealed partial class MainForm : Form
     private readonly CardScanningService _scanningService;
     private readonly CardWriteOrchestrator _orchestrator;
     private readonly CardRegistrationService _registrationService;
+    private readonly IWriterAuthSession _authSession;
     private readonly AppSettings _settings;
     private readonly Dictionary<string, string> _timings = new(StringComparer.OrdinalIgnoreCase);
 
@@ -42,12 +45,14 @@ public sealed partial class MainForm : Form
         CardScanningService scanningService,
         CardWriteOrchestrator orchestrator,
         CardRegistrationService registrationService,
+        IWriterAuthSession authSession,
         IOptions<AppSettings> options)
     {
         _connectionService = connectionService ?? throw new ArgumentNullException(nameof(connectionService));
         _scanningService = scanningService ?? throw new ArgumentNullException(nameof(scanningService));
         _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
         _registrationService = registrationService ?? throw new ArgumentNullException(nameof(registrationService));
+        _authSession = authSession ?? throw new ArgumentNullException(nameof(authSession));
         ArgumentNullException.ThrowIfNull(options);
         _settings = options.Value ?? throw new ArgumentNullException(nameof(options));
 
@@ -150,8 +155,9 @@ public sealed partial class MainForm : Form
             return "Reader driver is missing. Contact IT.";
         if (message.Contains("BaseUrl", StringComparison.OrdinalIgnoreCase))
             return "API address is not configured.";
-        if (message.Contains("BearerToken", StringComparison.OrdinalIgnoreCase))
-            return "API login token is not configured.";
+        if (message.Contains("BearerToken", StringComparison.OrdinalIgnoreCase)
+            || message.Contains(HttpCardRegistrarAdapter.AuthRequiredMessage, StringComparison.Ordinal))
+            return HttpCardRegistrarAdapter.AuthRequiredMessage;
         return UserMessage.SafeMessage(message);
     }
 
@@ -909,6 +915,7 @@ public sealed partial class MainForm : Form
         using var dlg = new SupportForm(
             _settings,
             _connectionService,
+            _authSession,
             () => cboReader.Text,
             () => operationLog.GetLines(),
             _timings,

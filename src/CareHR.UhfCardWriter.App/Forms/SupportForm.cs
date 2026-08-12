@@ -2,6 +2,7 @@ using System.Diagnostics;
 using CareHR.UhfCardWriter.App.Configuration;
 using CareHR.UhfCardWriter.App.Controls;
 using CareHR.UhfCardWriter.App.Diagnostics;
+using CareHR.UhfCardWriter.Application.Abstractions;
 using CareHR.UhfCardWriter.Application.Services;
 
 namespace CareHR.UhfCardWriter.App.Forms;
@@ -10,6 +11,7 @@ internal sealed class SupportForm : Form
 {
     private readonly AppSettings _settings;
     private readonly CardConnectionService _connection;
+    private readonly IWriterAuthSession _authSession;
     private readonly Func<string?> _readerLabel;
     private readonly Func<IEnumerable<string>> _operationLines;
     private readonly IReadOnlyDictionary<string, string> _timings;
@@ -22,6 +24,7 @@ internal sealed class SupportForm : Form
     public SupportForm(
         AppSettings settings,
         CardConnectionService connection,
+        IWriterAuthSession authSession,
         Func<string?> readerLabel,
         Func<IEnumerable<string>> operationLines,
         IReadOnlyDictionary<string, string> timings,
@@ -30,6 +33,7 @@ internal sealed class SupportForm : Form
     {
         _settings = settings;
         _connection = connection;
+        _authSession = authSession ?? throw new ArgumentNullException(nameof(authSession));
         _readerLabel = readerLabel;
         _operationLines = operationLines;
         _timings = timings;
@@ -80,7 +84,7 @@ internal sealed class SupportForm : Form
             ReadOnly = true,
             ScrollBars = ScrollBars.Vertical,
             Font = new Font("Consolas", 9f),
-            Text = DiagnosticsInfo.Summarize(settings, connection.IsConnected, readerLabel()),
+            Text = DiagnosticsInfo.Summarize(settings, connection.IsConnected, readerLabel(), authSession.HasToken),
         };
 
         _chkDebug = new CheckBox
@@ -173,9 +177,9 @@ internal sealed class SupportForm : Form
 
     private void RefreshAll()
     {
-        _info.Text = DiagnosticsInfo.Summarize(_settings, _connection.IsConnected, _readerLabel());
+        _info.Text = DiagnosticsInfo.Summarize(_settings, _connection.IsConnected, _readerLabel(), _authSession.HasToken);
         _health.Items.Clear();
-        foreach (var c in HealthChecker.Run(_settings, _connection, _readerLabel()))
+        foreach (var c in HealthChecker.Run(_settings, _connection, _readerLabel(), _authSession.HasToken))
         {
             var item = new ListViewItem(c.Ready ? "OK" : "FAIL");
             item.SubItems.Add(c.Name);
@@ -194,6 +198,7 @@ internal sealed class SupportForm : Form
                 _settings,
                 _connection,
                 _readerLabel(),
+                _authSession.HasToken,
                 _operationLines(),
                 _timings);
             MessageBox.Show(this,

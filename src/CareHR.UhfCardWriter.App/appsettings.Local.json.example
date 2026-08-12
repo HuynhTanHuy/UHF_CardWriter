@@ -1,7 +1,6 @@
 {
   "Api": {
     "BaseUrl": "https://carehr02-mgl-api.2bsolu.com",
-    "BearerToken": "PASTE_JWT_HERE",
     "CreateRfidCardPath": "/api/rfid/cards",
     "DefaultStatus": 4,
     "DefaultIsActive": true

@@ -16,7 +16,6 @@ Settings UI does not edit JSON — change files and restart the app.
 | Key | Purpose | Example / default |
 |-----|---------|-------------------|
 | `BaseUrl` | CareHR API root (HTTPS) | `https://carehr02-mgl-api.2bsolu.com` |
-| `BearerToken` | JWT for create-card | Empty in shared config; set via Local |
 | `CreateRfidCardPath` | Relative create path | `/api/rfid/cards` |
 | `DefaultStatus` | Card status on create | `4` (Stock) |
 | `DefaultIsActive` | Active flag | `true` |
@@ -50,12 +49,23 @@ Optional accent / status colors (`AccentHex`, `SuccessHex`, `ErrorHex`, `Warning
 
 ---
 
-## Local override (recommended for secrets)
+## JWT / Register authentication
+
+Register, exists-check, and next-serial API calls use a JWT held **in memory only**. The token is **not** stored in `appsettings.json`.
+
+From CareHR Frontend, use **Thêm thẻ tự động** (or equivalent) to send the current user JWT to the local bridge:
+
+`POST http://127.0.0.1:17890/api/auth/session` with header `Authorization: Bearer <JWT>`.
+
+Restarting Card Writer clears the session; authorize again from the frontend.
+
+---
+
+## Local override
 
 1. Copy `appsettings.Local.json.example` → `appsettings.Local.json` next to the EXE / project.  
-2. Paste a fresh Bearer token into `Api.BearerToken`.  
-3. Optionally override `BaseUrl` / path for non-MGL environments.  
-4. Keep Local files out of source control; restart after edits.
+2. Optionally override `BaseUrl` / path for non-MGL environments.  
+3. Keep Local files out of source control; restart after edits.
 
 Example Local shape:
 
@@ -63,7 +73,6 @@ Example Local shape:
 {
   "Api": {
     "BaseUrl": "https://carehr02-mgl-api.2bsolu.com",
-    "BearerToken": "PASTE_JWT_HERE",
     "CreateRfidCardPath": "/api/rfid/cards",
     "DefaultStatus": 4,
     "DefaultIsActive": true
@@ -76,7 +85,7 @@ Example Local shape:
 ## Validation & health
 
 - Startup validates critical config (e.g. password hex format warnings).  
-- Settings → Health shows config readiness (Native DLL, Backend URL/Token) — **not** a live HTTP ping.  
+- Settings → Health shows config readiness (Native DLL, Backend URL, Auth Session) — **not** a live HTTP ping.  
 - Create-card path must remain `/api/rfid/cards` unless Backend changes the contract ([API.md](API.md)).
 
 ---

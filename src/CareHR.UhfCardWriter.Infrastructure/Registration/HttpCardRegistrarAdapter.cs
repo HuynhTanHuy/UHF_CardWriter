@@ -14,28 +14,40 @@ namespace CareHR.UhfCardWriter.Infrastructure.Registration;
 /// <remarks>No business rules — Application enforces verify-before-register. No SDK types.</remarks>
 public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
 {
+    public const string AuthRequiredMessage =
+        "Chưa đăng nhập CareHR hoặc chưa cấp quyền cho ứng dụng ghi thẻ.";
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
     private readonly CareHrCardApiOptions _options;
+    private readonly IWriterAuthSession _authSession;
     private readonly HttpClient _http;
     private readonly bool _ownsHttp;
 
-    public HttpCardRegistrarAdapter(CareHrCardApiOptions options)
-        : this(options, new HttpClient(), ownsHttp: true)
+    public HttpCardRegistrarAdapter(CareHrCardApiOptions options, IWriterAuthSession authSession)
+        : this(options, authSession, new HttpClient(), ownsHttp: true)
     {
     }
 
-    public HttpCardRegistrarAdapter(CareHrCardApiOptions options, HttpClient httpClient)
-        : this(options, httpClient, ownsHttp: false)
+    public HttpCardRegistrarAdapter(
+        CareHrCardApiOptions options,
+        IWriterAuthSession authSession,
+        HttpClient httpClient)
+        : this(options, authSession, httpClient, ownsHttp: false)
     {
     }
 
-    private HttpCardRegistrarAdapter(CareHrCardApiOptions options, HttpClient httpClient, bool ownsHttp)
+    private HttpCardRegistrarAdapter(
+        CareHrCardApiOptions options,
+        IWriterAuthSession authSession,
+        HttpClient httpClient,
+        bool ownsHttp)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
+        _authSession = authSession ?? throw new ArgumentNullException(nameof(authSession));
         _http = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _ownsHttp = ownsHttp;
     }
@@ -49,9 +61,8 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
         if (string.IsNullOrWhiteSpace(baseUrl))
             return RegistrationResult.Fail(DeviceErrorCode.RegistrationFailed, "Thiếu Api.BaseUrl.");
 
-        var token = (_options.BearerToken ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(token))
-            return RegistrationResult.Fail(DeviceErrorCode.RegistrationFailed, "Thiếu Api.BearerToken.");
+        if (!TryGetAuthToken(out var token))
+            return RegistrationResult.Fail(DeviceErrorCode.RegistrationFailed, AuthRequiredMessage);
 
         var hospitalRaw = FirstNonEmpty(request.HospitalId, _options.DefaultHospitalId);
         if (string.IsNullOrWhiteSpace(hospitalRaw))
@@ -132,9 +143,8 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
         if (string.IsNullOrWhiteSpace(baseUrl))
             return CardExistenceResult.Failed("Thiếu Api.BaseUrl.");
 
-        var token = (_options.BearerToken ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(token))
-            return CardExistenceResult.Failed("Thiếu Api.BearerToken.");
+        if (!TryGetAuthToken(out var token))
+            return CardExistenceResult.Failed(AuthRequiredMessage);
 
         var hospitalRaw = FirstNonEmpty(hospitalId, _options.DefaultHospitalId);
         Guid? hospitalGuid = null;
@@ -169,7 +179,7 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
                 return CardExistenceResult.Failed(
                     statusCode switch
                     {
-                        401 => "API authentication failed. Update Api.BearerToken.",
+                        401 => "API authentication failed. Authorize Card Writer from CareHR Frontend again.",
                         403 => "Not authorized to query RFID cards.",
                         404 => "API endpoint not found. Check Api.BaseUrl / CreateRfidCardPath.",
                         >= 500 => "CareHR server error during card existence check.",
@@ -240,9 +250,8 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
         if (string.IsNullOrWhiteSpace(baseUrl))
             return NextSerialResult.Fail("Thiếu Api.BaseUrl.");
 
-        var token = (_options.BearerToken ?? string.Empty).Trim();
-        if (string.IsNullOrWhiteSpace(token))
-            return NextSerialResult.Fail("Thiếu Api.BearerToken.");
+        if (!TryGetAuthToken(out var token))
+            return NextSerialResult.Fail(AuthRequiredMessage);
 
         var hospitalRaw = FirstNonEmpty(hospitalId, _options.DefaultHospitalId);
         Guid? hospitalGuid = null;
@@ -283,7 +292,7 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
                     return NextSerialResult.Fail(
                         statusCode switch
                         {
-                            401 => "API authentication failed. Update Api.BearerToken.",
+                            401 => "API authentication failed. Authorize Card Writer from CareHR Frontend again.",
                             403 => "Not authorized to query RFID cards.",
                             404 => "API endpoint not found. Check Api.BaseUrl / CreateRfidCardPath.",
                             >= 500 => "CareHR server error while resolving next serial.",
@@ -430,7 +439,7 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
 
         return statusCode switch
         {
-            401 => "API authentication failed. Update Api.BearerToken.",
+            401 => "API authentication failed. Authorize Card Writer from CareHR Frontend again.",
             403 => "Not authorized to create RFID cards.",
             404 => "API endpoint not found. Check Api.BaseUrl / CreateRfidCardPath.",
             409 => "Conflict while registering the card.",
@@ -461,6 +470,18 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
         if (!string.IsNullOrWhiteSpace(b))
             return b.Trim();
         return string.Empty;
+    }
+
+    private bool TryGetAuthToken(out string token)
+    {
+        if (_authSession.TryGetToken(out token) && !string.IsNullOrWhiteSpace(token))
+        {
+            token = token.Trim();
+            return true;
+        }
+
+        token = string.Empty;
+        return false;
     }
 
     private static string NormalizeBearer(string token)

@@ -34,7 +34,7 @@ public sealed class CardConnectionService
             return endpoint.Kind switch
             {
                 ReaderConnectionKind.Serial => ConnectSerial(endpoint.ComPort!, endpoint.BaudRate),
-                ReaderConnectionKind.UsbHid => _connection.OpenHid(endpoint.UsbIndex),
+                ReaderConnectionKind.UsbHid => ConnectUsbHid(endpoint.UsbIndex),
                 ReaderConnectionKind.Network => ConnectNetwork(endpoint),
                 _ => throw new ValidationException($"Unsupported connection kind: {endpoint.Kind}."),
             };
@@ -89,6 +89,23 @@ public sealed class CardConnectionService
         {
             return CardValidation.MapDeviceException<IReadOnlyList<ReaderInformation>>(ex);
         }
+    }
+
+    private DeviceResult ConnectUsbHid(ushort usbIndex)
+    {
+        var countResult = _connection.GetUsbDeviceCount();
+        if (!countResult.Success)
+            return DeviceResult.Fail(
+                countResult.ErrorCode,
+                countResult.Message,
+                countResult.VendorStatusCode);
+
+        if (countResult.Value <= 0)
+            return DeviceResult.Fail(
+                DeviceErrorCode.ReaderNotConnected,
+                "No USB reader found.");
+
+        return _connection.OpenHid(usbIndex);
     }
 
     private DeviceResult ConnectSerial(string comPort, int baudRate)

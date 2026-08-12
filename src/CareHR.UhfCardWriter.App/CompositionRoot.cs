@@ -1,3 +1,4 @@
+using CareHR.UhfCardWriter.App.Bridge;
 using CareHR.UhfCardWriter.App.Configuration;
 using CareHR.UhfCardWriter.App.Diagnostics;
 using CareHR.UhfCardWriter.App.Forms;
@@ -59,7 +60,6 @@ public static class CompositionRoot
         services.AddCareHrCardWriter(api =>
         {
             api.BaseUrl = settings.Api.BaseUrl;
-            api.BearerToken = settings.Api.BearerToken;
             api.CreateRfidCardPath = settings.Api.CreateRfidCardPath;
             api.DefaultStatus = settings.Api.DefaultStatus;
             api.DefaultIsActive = settings.Api.DefaultIsActive;
@@ -67,6 +67,8 @@ public static class CompositionRoot
                 ? settings.Hospitals[0].Id
                 : string.Empty;
         });
+
+        services.AddSingleton<LocalBridgeHost>();
         services.AddTransient<MainForm>();
 
         return services.BuildServiceProvider();

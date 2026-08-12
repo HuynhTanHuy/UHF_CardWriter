@@ -5,6 +5,7 @@ public sealed class AppSettings
 {
     public ApiSettings Api { get; set; } = new();
     public ReaderSettings Reader { get; set; } = new();
+    public BridgeSettings Bridge { get; set; } = new();
     public CardSettings Card { get; set; } = new();
     public List<HospitalOption> Hospitals { get; set; } = new();
     public List<CardTypeOption> CardTypes { get; set; } = new();
@@ -14,7 +15,6 @@ public sealed class AppSettings
 public sealed class ApiSettings
 {
     public string BaseUrl { get; set; } = string.Empty;
-    public string BearerToken { get; set; } = string.Empty;
     /// <summary>CareHR create card path (<c>POST /api/rfid/cards</c>).</summary>
     public string CreateRfidCardPath { get; set; } = "/api/rfid/cards";
     /// <summary>Default <c>status</c> on create (Stock = 4).</summary>
@@ -31,6 +31,14 @@ public sealed class ReaderSettings
     public ushort NetworkPort { get; set; } = 8080;
     public int NetworkTimeoutMs { get; set; } = 3000;
     public ushort ScanTimeoutMs { get; set; } = 3000;
+}
+
+public sealed class BridgeSettings
+{
+    public bool Enabled { get; set; } = true;
+    public string Host { get; set; } = "127.0.0.1";
+    public int Port { get; set; } = 17890;
+    public List<string> AllowedOrigins { get; set; } = new();
 }
 
 public sealed class CardSettings

@@ -1,5 +1,6 @@
 using CareHR.UhfCardWriter.Application.Abstractions;
 using CareHR.UhfCardWriter.Application.DependencyInjection;
+using CareHR.UhfCardWriter.Infrastructure.Auth;
 using CareHR.UhfCardWriter.Infrastructure.Devices;
 using CareHR.UhfCardWriter.Infrastructure.Registration;
 using CareHR.UhfCardWriter.Sdk;
@@ -23,6 +24,7 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddSingleton(apiOptions ?? new CareHrCardApiOptions());
+        services.AddSingleton<IWriterAuthSession, InMemoryWriterAuthSession>();
         services.AddSingleton<IUhfSdk>(_ => new UhfPrimeSdk());
         services.AddSingleton<ICardConnection, CardConnectionAdapter>();
         services.AddSingleton<ICardScanner, CardScannerAdapter>();

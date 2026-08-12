@@ -1,3 +1,4 @@
+using CareHR.UhfCardWriter.App.Bridge;
 using CareHR.UhfCardWriter.App.Diagnostics;
 using CareHR.UhfCardWriter.App.Forms;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,11 +18,15 @@ static class Program
         try
         {
             using var services = CompositionRoot.CreateServiceProvider();
+            var bridge = services.GetRequiredService<LocalBridgeHost>();
+            bridge.Start();
             var mainForm = services.GetRequiredService<MainForm>();
             startupSw.Stop();
             AppLog.Info("Startup", $"Composition ready in {startupSw.ElapsedMilliseconds} ms");
             mainForm.Tag = startupSw.ElapsedMilliseconds;
             System.Windows.Forms.Application.Run(mainForm);
+            bridge.Stop();
+            bridge.Dispose();
             AppLog.Info("Shutdown", "Application exited normally.");
         }
         catch (Exception ex)
