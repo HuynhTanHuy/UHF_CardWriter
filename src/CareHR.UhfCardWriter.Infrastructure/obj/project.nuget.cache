@@ -1,13 +1,13 @@
 {
   "version": 2,
-  "dgSpecHash": "slkMoPESNrI=",
+  "dgSpecHash": "Nf+0i+9S+Zc=",
   "success": true,
-  "projectFilePath": "D:\\CAREHR\\CareHR.UhfCardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj",
+  "projectFilePath": "E:\\CareHR\\UHF_CardWriter\\src\\CareHR.UhfCardWriter.Infrastructure\\CareHR.UhfCardWriter.Infrastructure.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\tekme\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.2\\microsoft.extensions.dependencyinjection.abstractions.8.0.2.nupkg.sha512",
-    "C:\\Users\\tekme\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.27\\microsoft.netcore.app.ref.8.0.27.nupkg.sha512",
-    "C:\\Users\\tekme\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.27\\microsoft.windowsdesktop.app.ref.8.0.27.nupkg.sha512",
-    "C:\\Users\\tekme\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.27\\microsoft.aspnetcore.app.ref.8.0.27.nupkg.sha512"
+    "C:\\Users\\YangTV\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.2\\microsoft.extensions.dependencyinjection.abstractions.8.0.2.nupkg.sha512",
+    "C:\\Users\\YangTV\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.25\\microsoft.netcore.app.ref.8.0.25.nupkg.sha512",
+    "C:\\Users\\YangTV\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.25\\microsoft.windowsdesktop.app.ref.8.0.25.nupkg.sha512",
+    "C:\\Users\\YangTV\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.25\\microsoft.aspnetcore.app.ref.8.0.25.nupkg.sha512"
   ],
   "logs": []
 }

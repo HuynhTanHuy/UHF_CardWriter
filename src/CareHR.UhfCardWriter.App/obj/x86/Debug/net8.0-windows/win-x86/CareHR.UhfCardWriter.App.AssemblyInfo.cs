@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CareHR.UhfCardWriter.App")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+phase9.cc14bb8c746c0871e9642b7ab7e95dc53fbe2678")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+phase9.a2ede16519cb3d6a8672992a9a817437607672ac")]
 [assembly: System.Reflection.AssemblyProductAttribute("CareHR UHF Card Writer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CareHR.UhfCardWriter.App")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
