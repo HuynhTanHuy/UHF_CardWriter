@@ -1,7 +1,8 @@
 namespace CareHR.UhfCardWriter.Application.Abstractions;
 
 /// <summary>
-/// In-memory CareHR JWT session for API registration (set via local bridge from frontend).
+/// In-memory CareHR JWT session for API calls (set by Writer LoginForm).
+/// Token is never persisted to disk or config.
 /// </summary>
 public interface IWriterAuthSession
 {

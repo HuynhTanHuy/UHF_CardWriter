@@ -21,6 +21,7 @@ public sealed partial class MainForm : Form
     private readonly CardWriteOrchestrator _orchestrator;
     private readonly CardRegistrationService _registrationService;
     private readonly IWriterAuthSession _authSession;
+    private readonly ICareHrLoginClient _loginClient;
     private readonly AppSettings _settings;
     private readonly Dictionary<string, string> _timings = new(StringComparer.OrdinalIgnoreCase);
 
@@ -55,6 +56,7 @@ public sealed partial class MainForm : Form
         CardWriteOrchestrator orchestrator,
         CardRegistrationService registrationService,
         IWriterAuthSession authSession,
+        ICareHrLoginClient loginClient,
         IOptions<AppSettings> options)
     {
         _connectionService = connectionService ?? throw new ArgumentNullException(nameof(connectionService));
@@ -62,6 +64,7 @@ public sealed partial class MainForm : Form
         _orchestrator = orchestrator ?? throw new ArgumentNullException(nameof(orchestrator));
         _registrationService = registrationService ?? throw new ArgumentNullException(nameof(registrationService));
         _authSession = authSession ?? throw new ArgumentNullException(nameof(authSession));
+        _loginClient = loginClient ?? throw new ArgumentNullException(nameof(loginClient));
         ArgumentNullException.ThrowIfNull(options);
         _settings = options.Value ?? throw new ArgumentNullException(nameof(options));
 
@@ -164,9 +167,11 @@ public sealed partial class MainForm : Form
             return "Reader driver is missing. Contact IT.";
         if (message.Contains("BaseUrl", StringComparison.OrdinalIgnoreCase))
             return "API address is not configured.";
-        if (message.Contains("BearerToken", StringComparison.OrdinalIgnoreCase)
-            || message.Contains(HttpCardRegistrarAdapter.AuthRequiredMessage, StringComparison.Ordinal))
-            return HttpCardRegistrarAdapter.AuthRequiredMessage;
+        if (message.Contains(HttpCardRegistrarAdapter.AuthRequiredMessage, StringComparison.Ordinal)
+            || message.Contains(HttpCardRegistrarAdapter.SessionExpiredMessage, StringComparison.Ordinal))
+            return message.Contains(HttpCardRegistrarAdapter.SessionExpiredMessage, StringComparison.Ordinal)
+                ? HttpCardRegistrarAdapter.SessionExpiredMessage
+                : HttpCardRegistrarAdapter.AuthRequiredMessage;
         return UserMessage.SafeMessage(message);
     }
 
@@ -815,8 +820,31 @@ public sealed partial class MainForm : Form
             return;
         }
 
+        if (!_authSession.HasToken)
+        {
+            MessageBox.Show(
+                this,
+                HttpCardRegistrarAdapter.AuthRequiredMessage,
+                "Start",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            if (!PromptRelogin())
+                return;
+        }
+
         // Refresh next serial from DB before starting (HospitalNumber + Batch scope).
-        ResolveNextSerialFromDb();
+        // Must succeed — do not start batch with stale/default Current.
+        if (!TryResolveNextSerialFromDb(out var resolveError))
+        {
+            var msg = string.IsNullOrWhiteSpace(resolveError)
+                ? "Không lấy được serial tiếp theo."
+                : resolveError;
+            LogOp("Sequence", msg);
+            MessageBox.Show(this, msg, "Start", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            if (IsSessionAuthFailure(msg))
+                PromptRelogin();
+            return;
+        }
 
         if (!TryParseRange(out var start, out var end, out var current, out var error))
         {
@@ -977,6 +1005,16 @@ public sealed partial class MainForm : Form
                     SetUiState(UiState.WaitingForCard, warn);
                     PlayFailBeep();
                     RefreshBatchCounters();
+
+                    // Auth failure on Exists → stop batch (do not Write); require login again.
+                    if (result.Stage == CardWriteJobStage.SkippedExistsCheckFailed &&
+                        IsSessionAuthFailure(warn))
+                    {
+                        FailBatchStop(warn, result.Stage);
+                        PromptRelogin();
+                        break;
+                    }
+
                     try
                     {
                         await Task.Delay(800, _batchCts.Token).ConfigureAwait(true);
@@ -1021,6 +1059,8 @@ public sealed partial class MainForm : Form
                 SetUiState(UiState.Failed, failMsg);
                 PlayFailBeep();
                 LogOp("Batch", $"Stopped at {txtCurrent.Text}. Number not skipped.");
+                if (IsSessionAuthFailure(result.Message) || IsSessionAuthFailure(failMsg))
+                    PromptRelogin();
                 break;
             }
         }
@@ -1116,11 +1156,32 @@ public sealed partial class MainForm : Form
         {
             CardWriteJobStage.Writing => "Writing failed. " + safe,
             CardWriteJobStage.Verifying => "Verify failed. " + safe,
-            CardWriteJobStage.Registering or CardWriteJobStage.WrittenButUnregistered => "Register failed. " + safe,
+            CardWriteJobStage.WrittenButUnregistered =>
+                "Thẻ đã được ghi nhưng chưa đăng ký được lên hệ thống. " + safe,
+            CardWriteJobStage.Registering => "Register failed. " + safe,
             CardWriteJobStage.Scanning => "Card not detected. Place the card again.",
             CardWriteJobStage.Selecting => "Could not select card. Place the card again.",
             _ => safe,
         };
+    }
+
+    private static bool IsSessionAuthFailure(string? message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+            return false;
+
+        return message.Contains(HttpCardRegistrarAdapter.SessionExpiredMessage, StringComparison.Ordinal)
+               || message.Contains(HttpCardRegistrarAdapter.AuthRequiredMessage, StringComparison.Ordinal)
+               || message.Contains("hết hạn", StringComparison.OrdinalIgnoreCase)
+               || message.Contains("HTTP 401", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Shows LoginForm; returns true when session has a token again.</summary>
+    private bool PromptRelogin()
+    {
+        using var login = new LoginForm(_loginClient, _authSession);
+        var result = login.ShowDialog(this);
+        return result == DialogResult.OK && _authSession.HasToken;
     }
 
     private void SetConnectButtonText(bool connected)
@@ -1250,25 +1311,52 @@ public sealed partial class MainForm : Form
 
     /// <summary>
     /// Sets Current (and Start) to MAX(serial for HospitalNumber+Batch) + 1 from CareHR API.
-    /// Does not reset to 1 when DB already has numbers for the prefix.
+    /// On failure does not change Current/Start (no fallback to 1).
     /// </summary>
     private void ResolveNextSerialFromDb()
     {
+        _ = TryResolveNextSerialFromDb(out _);
+    }
+
+    /// <summary>
+    /// Resolves next serial from CareHR. On failure leaves Current/Start unchanged and returns false.
+    /// </summary>
+    private bool TryResolveNextSerialFromDb(out string error)
+    {
+        error = string.Empty;
+
         if (_batchRunning)
-            return;
+        {
+            error = "Batch đang chạy.";
+            return false;
+        }
+
+        if (!_authSession.HasToken)
+        {
+            error = HttpCardRegistrarAdapter.AuthRequiredMessage;
+            LogOp("Sequence", error);
+            return false;
+        }
 
         if (cboHospital.SelectedItem is not HospitalOption hospital ||
             string.IsNullOrWhiteSpace(hospital.Id))
         {
-            return;
+            error = "Chọn bệnh viện trước khi lấy serial.";
+            return false;
         }
 
         var hospitalNumber = hospital.EffectiveHospitalNumber;
         if (string.IsNullOrWhiteSpace(hospitalNumber))
-            return;
+        {
+            error = "Thiếu HospitalNumber của bệnh viện.";
+            return false;
+        }
 
         if (!UiInputHelper.TryParsePositiveInt(txtBatch.Text, out var batchNumber) || batchNumber <= 0)
-            return;
+        {
+            error = "Batch number không hợp lệ.";
+            return false;
+        }
 
         var batchWidth = Math.Max(1, _settings.Card.BatchNumberWidth);
         var serialWidth = Math.Max(1, _settings.Card.SerialNumberWidth);
@@ -1282,14 +1370,18 @@ public sealed partial class MainForm : Form
         }
         catch (Exception ex)
         {
-            LogOp("Sequence", "Không lấy được serial tiếp theo: " + UserMessage.ForException(ex));
-            return;
+            error = "Không lấy được serial tiếp theo: " + UserMessage.ForException(ex);
+            LogOp("Sequence", error);
+            return false;
         }
 
         if (!next.Success)
         {
-            LogOp("Sequence", "Không lấy được serial tiếp theo: " + next.Message);
-            return;
+            error = string.IsNullOrWhiteSpace(next.Message)
+                ? "Không lấy được serial tiếp theo."
+                : next.Message;
+            LogOp("Sequence", error);
+            return false;
         }
 
         _resolvingSerial = true;
@@ -1302,6 +1394,7 @@ public sealed partial class MainForm : Form
                 txtEnd.Text = Math.Max(next.NextSerial, next.NextSerial + 99).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
             LogOp("Sequence", $"Next serial for {prefix} = {next.NextSerial}.");
+            return true;
         }
         finally
         {

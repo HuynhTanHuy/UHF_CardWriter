@@ -45,7 +45,7 @@ Before production operator use on a station:
 
 1. Supported UHF desk reader connected; Connect / Disconnect / Refresh pass.  
 2. One-tag write + verify on physical Gen2 card.  
-3. Valid `Api.BearerToken` (Local) + correct hospital / card type GUIDs.  
+3. CareHR LoginForm succeeds with hospital-scoped RFID user + correct hospital / card type GUIDs.  
 4. CareHR MGL (or target) API reachable over HTTPS.  
 5. Operator UAT signed where required by hospital process.
 
@@ -53,7 +53,6 @@ Before production operator use on a station:
 
 ## Future enhancements (out of current RC)
 
-- Login flow to obtain Bearer token (no manual paste).  
 - Live API health ping.  
 - In-app Settings editor.  
 - Structured logging (e.g. Serilog) if central log shipping is required.

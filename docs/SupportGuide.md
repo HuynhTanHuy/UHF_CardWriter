@@ -9,11 +9,22 @@ Open **Settings** in the app for About, Health, Open log folder, and Export diag
 
 ---
 
+## Operator workflow
+
+1. Open `CareHR.UhfCardWriter.App.exe`.  
+2. Sign in with CareHR username/password (LoginForm).  
+3. **Connect** the desk reader.  
+4. Confirm RF Power / Out Interface / Volume (buzzer) as needed.  
+5. **Start** batch (next serial is resolved from CareHR before start).  
+6. Place card → Scan → Write → Verify → Register.
+
+---
+
 ## Reader không nhận / Connect fail
 
 1. Confirm USB cable and desk reader power.  
 2. Settings → Health: **Native DLL (UHFPrimeReader)** must be OK.  
-3. If DLL missing: reinstall / copy `UHFPrimeReader.dll` + `hidapi.dll` next to the EXE (x64).  
+3. If DLL missing: reinstall / copy `UHFPrimeReader.dll` + `hidapi.dll` next to the EXE (**x86**).  
 4. Refresh readers (Ctrl+R) and select USB device.  
 5. For Serial: verify `Reader.ComPort` / baud in `appsettings.json`.  
 6. Export diagnostics and attach to the ticket.
@@ -22,21 +33,28 @@ Open **Settings** in the app for About, Health, Open log folder, and Export diag
 
 ## API lỗi / không đăng ký được thẻ
 
-1. Health → **Backend URL** and **Backend Token**.  
-2. Set `Api.BearerToken` in `appsettings.json` **or** copy `appsettings.Local.json.example` → `appsettings.Local.json` and paste JWT (preferred for secrets).  
-3. Confirm `Api.BaseUrl` = CareHR API host (e.g. `https://carehr02-mgl-api.2bsolu.com`).  
-4. Path must be `/api/rfid/cards`.  
+1. Health → **Backend URL** and **Auth Session**.  
+2. Confirm `Api.BaseUrl` = CareHR API host (e.g. `https://carehr02-mgl-api.2bsolu.com`).  
+3. Path must be `/api/rfid/cards`.  
+4. Sign in again with a hospital-scoped user that has RFID enabled.  
 5. Restart the app after editing config.
 
 ---
 
-## Token lỗi (401)
+## Token / session lỗi (401)
 
-1. Token expired or wrong environment.  
-2. Login to CareHR web → copy a fresh Bearer token.  
-3. Update `Api.BearerToken` (Local override recommended).  
-4. Retry Write/Register.  
-5. Never paste tokens into chat/tickets without redaction; use Export (token shows as “(set)”).
+1. Session expired or wrong environment.  
+2. Sign in again in LoginForm (JWT is memory-only; restart always requires login).  
+3. Retry Start / Register.  
+4. Never paste tokens into chat/tickets; Export shows auth as set/not set only.
+
+---
+
+## Permission lỗi (403)
+
+1. Account lacks RFID access or hospital scope / `RFID_V2` feature.  
+2. Do **not** treat 403 as expired token.  
+3. Use another CareHR account or enable the hospital feature.
 
 ---
 
@@ -53,7 +71,7 @@ Open **Settings** in the app for About, Health, Open log folder, and Export diag
 ## Register thất bại (card already written)
 
 1. Physical card may already be written & verified (`WrittenButUnregistered`).  
-2. Common causes: empty token, network, duplicate card number, wrong hospital/type.  
+2. Common causes: session expired, network, duplicate card number, wrong hospital/type, 403.  
 3. Message “Card number already exists…” → use another serial or clear duplicate in CareHR.  
 4. Do not change Backend contract; fix config/data then reconcile in CareHR UI if needed.
 
@@ -68,7 +86,7 @@ Open **Settings** in the app for About, Health, Open log folder, and Export diag
 | 3 | Open log folder — attach latest `app-*.log` |
 | 4 | If crash: attach latest file under `crashes\` |
 | 5 | Confirm `appsettings.json` / Local (no secrets in email body) |
-| 6 | Restart app; Connect → Scan → Write |
+| 6 | Restart app; Login → Connect → Start |
 
 ---
 
@@ -77,11 +95,9 @@ Open **Settings** in the app for About, Health, Open log folder, and Export diag
 | Key | Purpose |
 |-----|---------|
 | `Api.BaseUrl` | CareHR API root |
-| `Api.BearerToken` | JWT (keep out of source control via Local file) |
 | `Api.CreateRfidCardPath` | `/api/rfid/cards` |
 | `Hospitals[].Id` | GUID hospital |
 | `CardTypes[].Id` | GUID card type |
-| `Card.DefaultBatchCode` | Batch code default |
 | `Reader.*` | Connect defaults |
 
-Workflow is always: **Connect → Scan → Write → Verify → Register**. Do not skip Verify.
+JWT is obtained via LoginForm — **not** stored in config.

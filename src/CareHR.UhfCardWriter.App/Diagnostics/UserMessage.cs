@@ -39,8 +39,8 @@ internal static class UserMessage
 
         return statusCode switch
         {
-            401 => "API authentication failed. Authorize Card Writer from CareHR Frontend again.",
-            403 => "Not authorized to create RFID cards. Check account permissions.",
+            401 => "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+            403 => "Bạn không có quyền sử dụng chức năng RFID.",
             404 => "API endpoint not found. Check Api.BaseUrl and CreateRfidCardPath.",
             409 => "Conflict while registering the card. It may already exist.",
             >= 500 => "CareHR server error. Retry later or contact IT.",

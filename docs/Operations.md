@@ -22,10 +22,10 @@ In-app: **Settings** → About / Health / Open log folder / Export diagnostics.
 ## Operator workflow (always)
 
 ```text
-Connect → Scan → Write → Verify → Register
+Open EXE → Login → Connect → Start → Scan → Write → Verify → Register
 ```
 
-Do not skip Verify. On **WrittenButUnregistered**, fix token/network/data and retry register — do not rewrite blindly.
+Do not skip Verify. On **WrittenButUnregistered**, sign in again / fix network/data and retry register — do not rewrite blindly.
 
 ---
 
@@ -34,14 +34,15 @@ Do not skip Verify. On **WrittenButUnregistered**, fix token/network/data and re
 | Symptom | First checks |
 |---------|----------------|
 | Connect fail | Cable/power; Health → Native DLL; USB Refresh; COM settings |
-| API / register fail | Health → Backend URL + Token; Local JWT; BaseUrl + `/api/rfid/cards` |
-| 401 | Fresh CareHR Bearer token; correct environment |
+| API / register fail | Health → Backend URL + Auth Session; BaseUrl + `/api/rfid/cards`; LoginForm |
+| 401 | Session expired — login again in the app (memory-only JWT) |
+| 403 | Account/hospital RFID permission — do not treat as expired token |
 | Write fail | Connected; single card; access password hex; target EPC |
-| Register after write | Token/network/duplicate card number/hospital-type mismatch |
+| Register after write | Session/network/duplicate card number/hospital-type mismatch |
 
-Recovery: Health FAIL rows → Export diagnostics → attach latest log (and crash file if any) → confirm config without pasting secrets → restart → Connect → Scan → Write.
+Recovery: Health FAIL rows → Export diagnostics → attach latest log (and crash file if any) → confirm config without pasting secrets → restart → Login → Connect → Start.
 
-Native DLLs (`UHFPrimeReader.dll`, `hidapi.dll`) must sit next to the x64 EXE.
+Native DLLs (`UHFPrimeReader.dll`, `hidapi.dll`) must sit next to the **x86** EXE.
 
 ---
 

@@ -25,6 +25,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton(apiOptions ?? new CareHrCardApiOptions());
         services.AddSingleton<IWriterAuthSession, InMemoryWriterAuthSession>();
+        services.AddSingleton<ICareHrLoginClient, CareHrLoginClient>();
         services.AddSingleton<IUhfSdk>(_ => new UhfPrimeSdk());
         services.AddSingleton<ICardConnection, CardConnectionAdapter>();
         services.AddSingleton<ICardScanner, CardScannerAdapter>();

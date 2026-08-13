@@ -48,25 +48,25 @@ UHF_CardWriter/
 
 ## Requirements
 
-- Windows x64
+- Windows **x86** (win-x86 process; matches vendor UHF SDK)
 - .NET 8 SDK
 - UHF desk reader + `UHFPrimeReader.dll` / `hidapi.dll` (copied next to the EXE by build)
-- CareHR API access + Bearer token for Register
+- CareHR API access — sign in via LoginForm (JWT in memory only)
 
 ---
 
 ## Configuration
 
-Edit `appsettings.json` next to the EXE, or use `appsettings.Local.json` for secrets:
+Edit `appsettings.json` next to the EXE, or use `appsettings.Local.json` for site overrides:
 
 | Key | Purpose |
 |-----|---------|
 | `Api.BaseUrl` | CareHR API root |
-| `Api.BaseUrl` | CareHR API root |
-| JWT for Register | Via local bridge from CareHR Frontend (not in appsettings) |
 | `Api.CreateRfidCardPath` | `/api/rfid/cards` |
 | `Hospitals` / `CardTypes` | GUID catalog |
 | `Reader.*` / `Card.*` | Device and EPC defaults |
+
+JWT is obtained at runtime via **LoginForm** (`POST /api/auth/login`) — never stored in config.
 
 See [docs/Configuration.md](docs/Configuration.md).
 
@@ -75,8 +75,8 @@ See [docs/Configuration.md](docs/Configuration.md).
 ## Build
 
 ```powershell
-dotnet build CareHR.UhfCardWriter.sln -c Debug -p:Platform=x64
-dotnet build CareHR.UhfCardWriter.sln -c Release -p:Platform=x64
+dotnet build CareHR.UhfCardWriter.sln -c Debug -p:Platform=x86
+dotnet build CareHR.UhfCardWriter.sln -c Release -p:Platform=x86
 ```
 
 ---
@@ -84,18 +84,19 @@ dotnet build CareHR.UhfCardWriter.sln -c Release -p:Platform=x64
 ## Run
 
 ```powershell
-dotnet run --project src/CareHR.UhfCardWriter.App -c Debug -p:Platform=x64
+dotnet run --project src/CareHR.UhfCardWriter.App -c Debug -p:Platform=x86
 ```
 
-Or launch the EXE under `src/CareHR.UhfCardWriter.App/bin/x64/.../`.
+Or launch the EXE under `src/CareHR.UhfCardWriter.App/bin/x86/.../win-x86/`.
 
-Shortcuts: **F5** Connect, **F6** Scan, **F7** Write, **Esc** Cancel.
+Flow: **Login → Connect → Start → Scan → Write → Verify → Register**.  
+Shortcuts: **F5** Connect, **Esc** Stop/Cancel.
 
 ---
 
 ## Deployment
 
-1. Publish/copy the App `win-x64` output folder (includes native DLLs).  
+1. Publish/copy the App `win-x86` output folder (includes native DLLs).  
 2. Place site-specific `appsettings.json` / `appsettings.Local.json`.  
 3. Confirm Health (Settings) shows Native DLL + config readiness.  
 4. Run UAT checklist: [docs/UAT.md](docs/UAT.md).

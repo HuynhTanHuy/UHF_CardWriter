@@ -1,16 +1,16 @@
 # UAT — CareHR UHF Card Writer
 
 **Product:** CareHR.UhfCardWriter  
-**Build:** Debug or Release `win-x64` App output  
+**Build:** Debug or Release `win-x86` App output  
 **Prerequisites:**
 
 1. UHF desk reader powered and connected (USB HID / COM / Network as configured).  
 2. `UHFPrimeReader.dll` + `hidapi.dll` next to the EXE (copied by build).  
 3. Edit `appsettings.json` beside the EXE:
    - `Api.BaseUrl`
-   - `Api.BearerToken`
    - `CardTypes[].Id` matching CareHR RFID tag types  
-4. At least one blank/writable Gen2 card in the field for write tests.
+4. CareHR username/password for a hospital-scoped RFID user (LoginForm).  
+5. At least one blank/writable Gen2 card in the field for write tests.
 
 ---
 

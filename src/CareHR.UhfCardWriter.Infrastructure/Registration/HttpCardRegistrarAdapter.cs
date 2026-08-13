@@ -4,6 +4,7 @@ using CareHR.UhfCardWriter.Application.Abstractions;
 using CareHR.UhfCardWriter.Application.Devices;
 using CareHR.UhfCardWriter.Application.Models;
 using CareHR.UhfCardWriter.Application.Services;
+using CareHR.UhfCardWriter.Infrastructure.Diagnostics;
 
 namespace CareHR.UhfCardWriter.Infrastructure.Registration;
 
@@ -15,7 +16,13 @@ namespace CareHR.UhfCardWriter.Infrastructure.Registration;
 public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
 {
     public const string AuthRequiredMessage =
-        "Chưa đăng nhập CareHR hoặc chưa cấp quyền cho ứng dụng ghi thẻ.";
+        "Chưa đăng nhập CareHR. Vui lòng đăng nhập trong ứng dụng ghi thẻ.";
+
+    public const string SessionExpiredMessage =
+        "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.";
+
+    public const string ForbiddenRfidMessage =
+        "Bạn không có quyền sử dụng chức năng RFID.";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -62,7 +69,10 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
             return RegistrationResult.Fail(DeviceErrorCode.RegistrationFailed, "Thiếu Api.BaseUrl.");
 
         if (!TryGetAuthToken(out var token))
+        {
+            AuthHttpDiag.LogAuthSession("HttpCardRegistrarAdapter.Register.MissingToken", null);
             return RegistrationResult.Fail(DeviceErrorCode.RegistrationFailed, AuthRequiredMessage);
+        }
 
         var hospitalRaw = FirstNonEmpty(request.HospitalId, _options.DefaultHospitalId);
         if (string.IsNullOrWhiteSpace(hospitalRaw))
@@ -104,7 +114,8 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
 
         try
         {
-            using var message = new HttpRequestMessage(HttpMethod.Post, baseUrl + path);
+            var requestUrl = baseUrl + path;
+            using var message = new HttpRequestMessage(HttpMethod.Post, requestUrl);
             message.Headers.TryAddWithoutValidation("Accept", "application/json, text/plain, */*");
             message.Headers.TryAddWithoutValidation("Authorization", NormalizeBearer(token));
             message.Content = new StringContent(
@@ -112,13 +123,26 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
                 Encoding.UTF8,
                 "application/json");
 
+            AuthHttpDiag.LogHttpRequest(
+                "Register",
+                "POST",
+                requestUrl,
+                token,
+                message.Headers.Contains("Authorization"),
+                message.Headers.Authorization?.Scheme
+                ?? (NormalizeBearer(token).StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ? "Bearer" : "(raw)"));
+
             using var response = _http.SendAsync(message).GetAwaiter().GetResult();
             var text = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             var detail = string.IsNullOrWhiteSpace(text) ? response.ReasonPhrase ?? string.Empty : text;
             var statusCode = (int)response.StatusCode;
+            AuthHttpDiag.LogHttpResult("Register", statusCode, response.ReasonPhrase, text);
 
             if (response.IsSuccessStatusCode)
                 return RegistrationResult.Ok(string.IsNullOrWhiteSpace(detail) ? "Registered" : Truncate(detail, 240));
+
+            if (statusCode == 401)
+                ClearSessionOnUnauthorized("Register");
 
             return RegistrationResult.Fail(
                 DeviceErrorCode.RegistrationFailed,
@@ -126,6 +150,7 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
         }
         catch (Exception ex)
         {
+            AuthHttpDiag.Log($"[HTTP] Result Operation=Register Exception={ex.GetType().Name}: {ex.Message}");
             return RegistrationResult.Fail(
                 DeviceErrorCode.RegistrationFailed,
                 ToUserFacingException(ex));
@@ -144,7 +169,10 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
             return CardExistenceResult.Failed("Thiếu Api.BaseUrl.");
 
         if (!TryGetAuthToken(out var token))
+        {
+            AuthHttpDiag.LogAuthSession("HttpCardRegistrarAdapter.Exists.MissingToken", null);
             return CardExistenceResult.Failed(AuthRequiredMessage);
+        }
 
         var hospitalRaw = FirstNonEmpty(hospitalId, _options.DefaultHospitalId);
         Guid? hospitalGuid = null;
@@ -170,21 +198,26 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
             message.Headers.TryAddWithoutValidation("Accept", "application/json, text/plain, */*");
             message.Headers.TryAddWithoutValidation("Authorization", NormalizeBearer(token));
 
+            AuthHttpDiag.LogHttpRequest(
+                "Exists",
+                "GET",
+                url,
+                token,
+                message.Headers.Contains("Authorization"),
+                message.Headers.Authorization?.Scheme
+                ?? (NormalizeBearer(token).StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ? "Bearer" : "(raw)"));
+
             using var response = _http.SendAsync(message).GetAwaiter().GetResult();
             var text = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             var statusCode = (int)response.StatusCode;
+            AuthHttpDiag.LogHttpResult("Exists", statusCode, response.ReasonPhrase, text);
 
             if (!response.IsSuccessStatusCode)
             {
-                return CardExistenceResult.Failed(
-                    statusCode switch
-                    {
-                        401 => "API authentication failed. Authorize Card Writer from CareHR Frontend again.",
-                        403 => "Not authorized to query RFID cards.",
-                        404 => "API endpoint not found. Check Api.BaseUrl / CreateRfidCardPath.",
-                        >= 500 => "CareHR server error during card existence check.",
-                        _ => $"Card existence check failed (HTTP {statusCode}).",
-                    });
+                if (statusCode == 401)
+                    ClearSessionOnUnauthorized("Exists");
+
+                return CardExistenceResult.Failed(ToUserFacingHttpError(statusCode, text));
             }
 
             if (string.IsNullOrWhiteSpace(text))
@@ -225,10 +258,12 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
         }
         catch (JsonException ex)
         {
+            AuthHttpDiag.Log($"[HTTP] Result Operation=Exists JsonException={ex.Message}");
             return CardExistenceResult.Failed("Invalid existence-check response: " + ex.Message);
         }
         catch (Exception ex)
         {
+            AuthHttpDiag.Log($"[HTTP] Result Operation=Exists Exception={ex.GetType().Name}: {ex.Message}");
             return CardExistenceResult.Failed(ToUserFacingException(ex));
         }
     }
@@ -251,7 +286,12 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
             return NextSerialResult.Fail("Thiếu Api.BaseUrl.");
 
         if (!TryGetAuthToken(out var token))
+        {
+            AuthHttpDiag.LogAuthSession("HttpCardRegistrarAdapter.GetNextSerial.MissingToken", null);
             return NextSerialResult.Fail(AuthRequiredMessage);
+        }
+
+        AuthHttpDiag.LogAuthSession("HttpCardRegistrarAdapter.GetNextSerial", token);
 
         var hospitalRaw = FirstNonEmpty(hospitalId, _options.DefaultHospitalId);
         Guid? hospitalGuid = null;
@@ -283,21 +323,26 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
                 message.Headers.TryAddWithoutValidation("Accept", "application/json, text/plain, */*");
                 message.Headers.TryAddWithoutValidation("Authorization", NormalizeBearer(token));
 
+                AuthHttpDiag.LogHttpRequest(
+                    "GetNextSerial",
+                    "GET",
+                    url,
+                    token,
+                    message.Headers.Contains("Authorization"),
+                    message.Headers.Authorization?.Scheme
+                    ?? (NormalizeBearer(token).StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ? "Bearer" : "(raw)"));
+
                 using var response = _http.SendAsync(message).GetAwaiter().GetResult();
                 var text = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
                 var statusCode = (int)response.StatusCode;
+                AuthHttpDiag.LogHttpResult("GetNextSerial", statusCode, response.ReasonPhrase, text);
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    return NextSerialResult.Fail(
-                        statusCode switch
-                        {
-                            401 => "API authentication failed. Authorize Card Writer from CareHR Frontend again.",
-                            403 => "Not authorized to query RFID cards.",
-                            404 => "API endpoint not found. Check Api.BaseUrl / CreateRfidCardPath.",
-                            >= 500 => "CareHR server error while resolving next serial.",
-                            _ => $"Next-serial query failed (HTTP {statusCode}).",
-                        });
+                    if (statusCode == 401)
+                        ClearSessionOnUnauthorized("GetNextSerial");
+
+                    return NextSerialResult.Fail(ToUserFacingHttpError(statusCode, text));
                 }
 
                 if (string.IsNullOrWhiteSpace(text))
@@ -398,10 +443,12 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
         }
         catch (JsonException ex)
         {
+            AuthHttpDiag.Log($"[HTTP] Result Operation=GetNextSerial JsonException={ex.Message}");
             return NextSerialResult.Fail("Invalid next-serial response: " + ex.Message);
         }
         catch (Exception ex)
         {
+            AuthHttpDiag.Log($"[HTTP] Result Operation=GetNextSerial Exception={ex.GetType().Name}: {ex.Message}");
             return NextSerialResult.Fail(ToUserFacingException(ex));
         }
     }
@@ -431,21 +478,61 @@ public sealed class HttpCardRegistrarAdapter : ICardRegistrar, IDisposable
         return false;
     }
 
+    private void ClearSessionOnUnauthorized(string operation)
+    {
+        _authSession.ClearToken();
+        AuthHttpDiag.LogAuthSession($"HttpCardRegistrarAdapter.{operation}.ClearedOn401", null);
+    }
+
     private static string ToUserFacingHttpError(int statusCode, string body)
     {
         if (!string.IsNullOrEmpty(body)
             && body.Contains("đã tồn tại", StringComparison.OrdinalIgnoreCase))
             return "Card number already exists in this hospital.";
 
+        if (statusCode == 401)
+            return SessionExpiredMessage;
+
+        if (statusCode == 403)
+        {
+            var detail = TryExtractApiMessage(body);
+            if (!string.IsNullOrWhiteSpace(detail))
+                return detail;
+            return ForbiddenRfidMessage;
+        }
+
         return statusCode switch
         {
-            401 => "API authentication failed. Authorize Card Writer from CareHR Frontend again.",
-            403 => "Not authorized to create RFID cards.",
-            404 => "API endpoint not found. Check Api.BaseUrl / CreateRfidCardPath.",
-            409 => "Conflict while registering the card.",
-            >= 500 => "CareHR server error. Retry later or contact IT.",
+            404 => "API endpoint not found (HTTP 404). Check Api.BaseUrl / CreateRfidCardPath.",
+            409 => "Conflict while registering the card (HTTP 409).",
+            >= 500 => $"CareHR server error (HTTP {statusCode}). Retry later or contact IT.",
             _ => $"Registration failed (HTTP {statusCode}).",
         };
+    }
+
+    private static string? TryExtractApiMessage(string? body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+            return null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
+            if (TryGetPropertyIgnoreCase(root, "message", out var msgEl) &&
+                msgEl.ValueKind == JsonValueKind.String)
+            {
+                var m = msgEl.GetString()?.Trim();
+                if (!string.IsNullOrWhiteSpace(m))
+                    return Truncate(m, 240);
+            }
+        }
+        catch
+        {
+            // Body may not be JSON.
+        }
+
+        return null;
     }
 
     private static string ToUserFacingException(Exception ex) =>

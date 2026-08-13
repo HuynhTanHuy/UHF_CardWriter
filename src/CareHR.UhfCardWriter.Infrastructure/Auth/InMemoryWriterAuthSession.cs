@@ -1,4 +1,5 @@
 using CareHR.UhfCardWriter.Application.Abstractions;
+using CareHR.UhfCardWriter.Infrastructure.Diagnostics;
 
 namespace CareHR.UhfCardWriter.Infrastructure.Auth;
 
@@ -15,6 +16,8 @@ public sealed class InMemoryWriterAuthSession : IWriterAuthSession
 
         lock (_gate)
             _token = token.Trim();
+
+        AuthHttpDiag.LogAuthSession("InMemoryWriterAuthSession.SetToken", _token);
     }
 
     public bool TryGetToken(out string token)

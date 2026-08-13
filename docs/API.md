@@ -14,11 +14,13 @@ Living document — phase reports archived under docs/archive/.
 | Method | `POST` |
 | Route | `{BaseUrl}/api/rfid/cards` |
 | BaseUrl (MGL example) | `https://carehr02-mgl-api.2bsolu.com` |
-| Auth | `Authorization: Bearer {token}` |
+| Auth | `Authorization: Bearer {token}` (from Writer LoginForm → in-memory session) |
 | Accept | `application/json, text/plain, */*` |
 | Content-Type | `application/json` |
 
-Config keys: `Api.BaseUrl`, `Api.BearerToken`, `Api.CreateRfidCardPath` (default `/api/rfid/cards`). See [Configuration.md](Configuration.md).
+Config keys: `Api.BaseUrl`, `Api.CreateRfidCardPath` (default `/api/rfid/cards`). JWT is **not** in config — see [Configuration.md](Configuration.md).
+
+Login (Writer): `POST {BaseUrl}/api/auth/login` with `{ "username", "password" }` → `data.token`.
 
 ---
 
@@ -66,7 +68,7 @@ IDs also live in `appsettings.json` under `Hospitals` / `CardTypes`.
 | non-2xx | `Fail(RegistrationFailed, "{status} {body}")` |
 | Exception / missing config | `Fail(RegistrationFailed, …)` |
 
-Adapter validates BaseUrl, BearerToken, hospitalId GUID, card type GUID, batch, and card number before calling HTTP.
+Adapter validates BaseUrl, in-memory JWT session, hospitalId GUID, card type GUID, batch, and card number before calling HTTP.
 
 ---
 

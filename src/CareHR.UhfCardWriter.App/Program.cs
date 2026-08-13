@@ -1,6 +1,6 @@
-using CareHR.UhfCardWriter.App.Bridge;
 using CareHR.UhfCardWriter.App.Diagnostics;
 using CareHR.UhfCardWriter.App.Forms;
+using CareHR.UhfCardWriter.Application.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CareHR.UhfCardWriter.App;
@@ -18,15 +18,24 @@ static class Program
         try
         {
             using var services = CompositionRoot.CreateServiceProvider();
-            var bridge = services.GetRequiredService<LocalBridgeHost>();
-            bridge.Start();
+
+            var authSession = services.GetRequiredService<IWriterAuthSession>();
+            if (!authSession.HasToken)
+            {
+                using var loginForm = services.GetRequiredService<LoginForm>();
+                var loginResult = loginForm.ShowDialog();
+                if (loginResult != DialogResult.OK || !authSession.HasToken)
+                {
+                    AppLog.Info("Shutdown", "Login cancelled; application exit.");
+                    return;
+                }
+            }
+
             var mainForm = services.GetRequiredService<MainForm>();
             startupSw.Stop();
             AppLog.Info("Startup", $"Composition ready in {startupSw.ElapsedMilliseconds} ms");
             mainForm.Tag = startupSw.ElapsedMilliseconds;
             System.Windows.Forms.Application.Run(mainForm);
-            bridge.Stop();
-            bridge.Dispose();
             AppLog.Info("Shutdown", "Application exited normally.");
         }
         catch (Exception ex)

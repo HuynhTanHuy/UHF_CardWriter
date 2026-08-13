@@ -53,11 +53,11 @@ Optional accent / status colors (`AccentHex`, `SuccessHex`, `ErrorHex`, `Warning
 
 Register, exists-check, and next-serial API calls use a JWT held **in memory only**. The token is **not** stored in `appsettings.json`.
 
-From CareHR Frontend, use **Thêm thẻ tự động** (or equivalent) to send the current user JWT to the local bridge:
+On startup, **LoginForm** authenticates against CareHR:
 
-`POST http://127.0.0.1:17890/api/auth/session` with header `Authorization: Bearer <JWT>`.
+`POST {Api.BaseUrl}/api/auth/login` with `{ "username", "password" }` → `data.token` → in-memory session.
 
-Restarting Card Writer clears the session; authorize again from the frontend.
+Restarting Card Writer clears the session; sign in again in the app. Use a hospital-scoped account with RFID access (`RFID_V2`).
 
 ---
 

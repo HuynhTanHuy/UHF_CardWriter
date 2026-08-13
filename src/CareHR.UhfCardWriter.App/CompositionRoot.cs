@@ -1,4 +1,3 @@
-using CareHR.UhfCardWriter.App.Bridge;
 using CareHR.UhfCardWriter.App.Configuration;
 using CareHR.UhfCardWriter.App.Diagnostics;
 using CareHR.UhfCardWriter.App.Forms;
@@ -68,7 +67,7 @@ public static class CompositionRoot
                 : string.Empty;
         });
 
-        services.AddSingleton<LocalBridgeHost>();
+        services.AddTransient<LoginForm>();
         services.AddTransient<MainForm>();
 
         return services.BuildServiceProvider();
