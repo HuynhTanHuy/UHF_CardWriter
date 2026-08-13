@@ -21,10 +21,20 @@ public static class DeviceConstants
     public const int DefaultUsbInfoCapacity = 256;
 
     /// <summary>Default scan window to detect a single card (ms).</summary>
+    /// <remarks>
+    /// Maximum wait for a card to appear. After a stable single EPC is observed,
+    /// <see cref="Services.CardScanningService"/> may return before this window ends.
+    /// </remarks>
     public const ushort DefaultScanTimeoutMs = 3000;
 
     /// <summary>Polling interval inside a scan window (ms).</summary>
     public const int DefaultScanPollIntervalMs = 50;
+
+    /// <summary>
+    /// Minimum successful inventory sightings of the same EPC before treating the
+    /// field as a stable single card (enables early exit without waiting full scan timeout).
+    /// </summary>
+    public const int DefaultScanStableSightings = 2;
 
     // Vendor Form1 DevicePara.INTERFACE / sample port mapping (confirmed GET values).
     public const byte OutInterfaceUsb = 0x01;

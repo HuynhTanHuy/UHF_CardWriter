@@ -1045,7 +1045,11 @@ public sealed partial class MainForm : Form
                     RefreshTargetCardPreview();
                     RefreshBatchCounters();
 
+                    var gapSw = System.Diagnostics.Stopwatch.StartNew();
                     await Task.Delay(400).ConfigureAwait(true);
+                    gapSw.Stop();
+                    AppLog.Info("Perf", $"[Perf] Batch.InterCardDelay ElapsedMs={gapSw.ElapsedMilliseconds} Status=OK");
+                    AppLog.Info("Perf", "[Perf] NextCard.Ready");
                     if (!_batchCts.IsCancellationRequested && current <= end)
                         SetUiState(UiState.Ready, "Remove card, then place the next card.");
                     continue;

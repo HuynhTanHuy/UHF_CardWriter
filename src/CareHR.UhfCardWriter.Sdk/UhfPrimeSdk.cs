@@ -198,7 +198,13 @@ public sealed class UhfPrimeSdk : IUhfSdk, IUhfConnection, IUhfInventory, IUhfWr
         ThrowIfDisposed();
         try
         {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            WriteDiag($"[Perf] InventoryStop.Start TimeoutMs={timeoutMs}");
             var stop = _driver.InventoryStop(timeoutMs);
+            sw.Stop();
+            WriteDiag(
+                $"[Perf] InventoryStop.End ElapsedMs={sw.ElapsedMilliseconds} " +
+                $"Status=0x{stop.StatusCode:X8} Success={stop.Success} Message={stop.Message}");
             if (!stop.Success)
             {
                 WriteDiag(

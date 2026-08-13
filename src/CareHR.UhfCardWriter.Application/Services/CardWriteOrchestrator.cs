@@ -1,4 +1,5 @@
 using CareHR.UhfCardWriter.Application.Devices;
+using CareHR.UhfCardWriter.Application.Diagnostics;
 using CareHR.UhfCardWriter.Application.Models;
 
 namespace CareHR.UhfCardWriter.Application.Services;
@@ -106,7 +107,12 @@ public sealed class CardWriteOrchestrator
         var scannedNumber = CardNumberBuilder.ToCardNumberFromEpcBytes(scanned.Identity.Epc);
         if (LooksLikeCareHrCardNumber(scannedNumber))
         {
-            var existence = _registrationService.Exists(request.HospitalId, scannedNumber);
+            var existence = PerfDiag.Time(
+                "Exists",
+                () => _registrationService.Exists(request.HospitalId, scannedNumber),
+                r => r.QuerySucceeded
+                    ? (r.Exists ? "Exists=true" : "Exists=false")
+                    : "QueryFailed");
             if (!existence.QuerySucceeded)
             {
                 return CardWriteJobResult.SkippedExistsCheckFailed(
@@ -123,6 +129,10 @@ public sealed class CardWriteOrchestrator
                     $"Thẻ RFID {scannedNumber} đã được đăng ký.");
             }
         }
+        else
+        {
+            PerfDiag.Log("Exists.Skip Status=FactoryEpc");
+        }
 
         var select = _scanningService.SelectCard(scanned.Identity);
         if (!select.Success)
@@ -137,8 +147,11 @@ public sealed class CardWriteOrchestrator
         if (cancellationToken.IsCancellationRequested)
             return CancelAndStop(scanned);
 
-        var write = _writingService.WriteIdentity(
-            new CardWriteRequest(request.IntendedIdentity, request.AccessPassword));
+        var write = PerfDiag.Time(
+            "WriteTag",
+            () => _writingService.WriteIdentity(
+                new CardWriteRequest(request.IntendedIdentity, request.AccessPassword)),
+            r => r.Success ? "OK" : r.ErrorCode.ToString());
 
         if (!write.Success)
         {
@@ -155,8 +168,11 @@ public sealed class CardWriteOrchestrator
         // Re-select intended EPC before Verify Read (production path).
         _ = _scanningService.SelectCard(request.IntendedIdentity);
 
-        var verify = _verificationService.Verify(
-            new CardVerifyRequest(request.IntendedIdentity, request.AccessPassword));
+        var verify = PerfDiag.Time(
+            "Verify",
+            () => _verificationService.Verify(
+                new CardVerifyRequest(request.IntendedIdentity, request.AccessPassword)),
+            r => r.Success ? "PASS" : r.ErrorCode.ToString());
 
         if (!verify.Success)
         {
@@ -171,13 +187,16 @@ public sealed class CardWriteOrchestrator
         if (cancellationToken.IsCancellationRequested)
             return CancelAndStop(scanned);
 
-        var registration = _registrationService.Register(
-            new RegistrationRequest(
-                request.IntendedIdentity,
-                request.HospitalId,
-                request.CardTypeId,
-                request.BatchCode,
-                isVerified: true));
+        var registration = PerfDiag.Time(
+            "Register",
+            () => _registrationService.Register(
+                new RegistrationRequest(
+                    request.IntendedIdentity,
+                    request.HospitalId,
+                    request.CardTypeId,
+                    request.BatchCode,
+                    isVerified: true)),
+            r => r.Success ? "OK" : r.ErrorCode.ToString());
 
         if (!registration.Success)
         {
