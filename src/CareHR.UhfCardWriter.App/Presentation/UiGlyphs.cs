@@ -99,6 +99,78 @@ internal static class UiGlyphs
         return bmp;
     }
 
+    /// <summary>
+    /// Vector speaker icon (Volume2 / VolumeX style) — same GDI+ approach as <see cref="CreateGearImage"/>.
+    /// Opaque <paramref name="backColor"/> so WinForms Button renders reliably.
+    /// </summary>
+    public static Image CreateSpeakerImage(int sizePx, Color color, bool muted, Color? backColor = null)
+    {
+        var bmp = new Bitmap(sizePx, sizePx);
+        using var g = Graphics.FromImage(bmp);
+        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+        g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+        g.Clear(backColor ?? Color.White);
+
+        var pad = sizePx * 0.10f;
+        var left = pad;
+        var right = sizePx - pad;
+        var midY = sizePx / 2f;
+        var span = right - left;
+
+        var bodyLeft = left;
+        var bodyRight = left + span * 0.26f;
+        var coneRight = left + span * 0.52f;
+        var bodyHalf = sizePx * 0.14f;
+        var coneHalf = sizePx * 0.32f;
+
+        using var brush = new SolidBrush(color);
+        using var body = new System.Drawing.Drawing2D.GraphicsPath();
+        body.AddPolygon(
+        [
+            new PointF(bodyLeft, midY - bodyHalf),
+            new PointF(bodyRight, midY - bodyHalf),
+            new PointF(coneRight, midY - coneHalf),
+            new PointF(coneRight, midY + coneHalf),
+            new PointF(bodyRight, midY + bodyHalf),
+            new PointF(bodyLeft, midY + bodyHalf),
+        ]);
+        g.FillPath(brush, body);
+
+        var stroke = Math.Max(1.6f, sizePx * 0.11f);
+        using var pen = new Pen(color, stroke)
+        {
+            LineJoin = System.Drawing.Drawing2D.LineJoin.Round,
+            StartCap = System.Drawing.Drawing2D.LineCap.Round,
+            EndCap = System.Drawing.Drawing2D.LineCap.Round,
+        };
+
+        var waveOriginX = coneRight - sizePx * 0.02f;
+        if (muted)
+        {
+            var x0 = waveOriginX + span * 0.12f;
+            var x1 = right - pad * 0.2f;
+            var y0 = midY - sizePx * 0.22f;
+            var y1 = midY + sizePx * 0.22f;
+            g.DrawLine(pen, x0, y0, x1, y1);
+            g.DrawLine(pen, x0, y1, x1, y0);
+        }
+        else
+        {
+            // Two sound-wave arcs (Volume2).
+            DrawSpeakerArc(g, pen, waveOriginX, midY, sizePx * 0.22f);
+            DrawSpeakerArc(g, pen, waveOriginX, midY, sizePx * 0.36f);
+        }
+
+        return bmp;
+    }
+
+    private static void DrawSpeakerArc(Graphics g, Pen pen, float originX, float midY, float radius)
+    {
+        var rect = new RectangleF(originX - radius, midY - radius, radius * 2f, radius * 2f);
+        // Open arc facing right (approx. -50° to +50°).
+        g.DrawArc(pen, rect, -52f, 104f);
+    }
+
     public static Image? CreateGlyphImage(string glyph, int sizePx, Color color)
     {
         try

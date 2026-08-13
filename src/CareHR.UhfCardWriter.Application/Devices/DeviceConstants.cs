@@ -73,4 +73,13 @@ public static class DeviceConstants
     /// <summary>True when <paramref name="power"/> is within vendor UI range 0..33 dBm.</summary>
     public static bool IsValidRfPowerDbm(byte power) =>
         power is >= RfPowerMinDbm and <= RfPowerMaxDbm;
+
+    /// <summary>
+    /// Vendor Desk Reader unmute value for <c>DevicePara.BUZZERTIME</c>
+    /// (<c>IsBuzzer ? 1 : 0</c> in vendor DeviceModel).
+    /// </summary>
+    public const byte DefaultBuzzerTime = 1;
+
+    /// <summary><c>BUZZERTIME = 0</c> means no beep (vendor mute).</summary>
+    public const byte BuzzerMuted = 0;
 }

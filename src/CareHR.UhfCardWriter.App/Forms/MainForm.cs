@@ -40,6 +40,15 @@ public sealed partial class MainForm : Form
     private int _runAnimFrame;
     private string? _connectTransientText;
 
+    /// <summary>BuzzerTime restored on Unmute; null until a non-zero value is observed or mute captures one.</summary>
+    private byte? _buzzerTimeBeforeMute;
+
+    /// <summary>Last verified BuzzerTime while connected; null when disconnected / unknown.</summary>
+    private byte? _currentBuzzerTime;
+
+    /// <summary>UI mute state for speaker icon (true = VolumeX).</summary>
+    private bool _buzzerUiMuted;
+
     public MainForm(
         CardConnectionService connectionService,
         CardScanningService scanningService,
@@ -220,6 +229,7 @@ public sealed partial class MainForm : Form
                     ? "Reader disconnected."
                     : UserMessage.ForDeviceOrOperation(close.Message));
                 _connectTransientText = null;
+                ResetBuzzerUi();
                 SetUiState(UiState.Disconnected, "Reader disconnected.");
             }
             finally
@@ -379,7 +389,7 @@ public sealed partial class MainForm : Form
     }
 
     /// <summary>
-    /// Post-connect: exactly one GetDevicePara → Out Interface + RF Power.
+    /// Post-connect: exactly one GetDevicePara → Out Interface + RF Power + Buzzer.
     /// </summary>
     private async Task LoadDeviceParaAfterConnectAsync()
     {
@@ -388,6 +398,8 @@ public sealed partial class MainForm : Form
             var threadId = Environment.CurrentManagedThreadId;
             LogOp("DevicePara", $"[DevicePara] GetStart ThreadId={threadId} Op=PostConnect");
             AppLog.Info("DevicePara", $"[DevicePara] GetStart ThreadId={threadId} Op=PostConnect");
+            LogOp("DevicePara", "[DevicePara] Buzzer GetStart");
+            AppLog.Info("DevicePara", "[DevicePara] Buzzer GetStart");
             var sw = Stopwatch.StartNew();
             var result = await Task.Run(() => _connectionService.GetDeviceParameters()).ConfigureAwait(true);
             sw.Stop();
@@ -416,6 +428,11 @@ public sealed partial class MainForm : Form
             LogOp(
                 "RFPower",
                 $"[RFPower] GetResult Status=0x{result.VendorStatusCode:X8} Success=true Actual={para.RfidPower}");
+
+            ApplyBuzzerUi(para.BuzzerTime);
+            LogOp("DevicePara", $"[DevicePara] Buzzer Current={para.BuzzerTime}");
+            AppLog.Info("DevicePara", $"[DevicePara] Buzzer Current={para.BuzzerTime}");
+
             LogOp(
                 "DevicePara",
                 $"[DevicePara] GetResult Status=0x{result.VendorStatusCode:X8} Success=true ThreadId={threadId}");
@@ -423,13 +440,163 @@ public sealed partial class MainForm : Form
             AppLog.Info(
                 "DevicePara",
                 $"[DevicePara] GetResult Status=0x{result.VendorStatusCode:X8} Success=true " +
-                $"Interface={para.Interface} RfidPower={para.RfidPower} ElapsedMs={sw.ElapsedMilliseconds}");
+                $"Interface={para.Interface} RfidPower={para.RfidPower} BuzzerTime={para.BuzzerTime} " +
+                $"ElapsedMs={sw.ElapsedMilliseconds}");
         }
         catch (Exception ex)
         {
             AppLog.Error("Presentation", "Load DevicePara after connect failed", ex);
             LogOp("DevicePara", UserMessage.ForException(ex));
         }
+    }
+
+    private async void BtnMuteBuzzer_Click(object? sender, EventArgs e)
+    {
+        if (_busy || _batchRunning || !_connectionService.IsConnected)
+            return;
+
+        if (_currentBuzzerTime is null)
+            return;
+
+        var currentlyMuted = _currentBuzzerTime.Value == DeviceConstants.BuzzerMuted;
+        byte requested;
+        if (currentlyMuted)
+        {
+            requested = _buzzerTimeBeforeMute is > 0
+                ? _buzzerTimeBeforeMute.Value
+                : DeviceConstants.DefaultBuzzerTime;
+        }
+        else
+        {
+            if (_currentBuzzerTime.Value > 0)
+                _buzzerTimeBeforeMute = _currentBuzzerTime.Value;
+            requested = DeviceConstants.BuzzerMuted;
+        }
+
+        SetBusy(true);
+        try
+        {
+            LogOp("DevicePara", $"[DevicePara] Buzzer Set Requested={requested}");
+            AppLog.Info("DevicePara", $"[DevicePara] Buzzer Set Requested={requested}");
+
+            var set = await Task.Run(() => _connectionService.SetBuzzerTime(requested)).ConfigureAwait(true);
+            if (!set.Success)
+            {
+                var msg = UserMessage.ForDeviceOrOperation(set.Message);
+                LogOp(
+                    "DevicePara",
+                    $"[DevicePara] Buzzer SetResult Success=false Status=0x{set.VendorStatusCode:X8} Message={set.Message}");
+                AppLog.Warn(
+                    "DevicePara",
+                    $"[DevicePara] Buzzer SetResult Success=false Status=0x{set.VendorStatusCode:X8} Message={set.Message}");
+                MessageBox.Show(
+                    this,
+                    "Không thể thay đổi trạng thái âm thanh của Reader. " + msg,
+                    "Buzzer",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            ApplyBuzzerUi(set.Value);
+            LogOp(
+                "DevicePara",
+                $"[DevicePara] Buzzer SetResult Success=true Actual={set.Value}");
+            AppLog.Info(
+                "DevicePara",
+                $"[DevicePara] Buzzer SetResult Success=true Actual={set.Value}");
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Presentation", "Set BuzzerTime failed", ex);
+            LogOp("DevicePara", UserMessage.ForException(ex));
+            MessageBox.Show(
+                this,
+                "Không thể thay đổi trạng thái âm thanh của Reader. " + UserMessage.ForException(ex),
+                "Buzzer",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+    }
+
+    private void ApplyBuzzerUi(byte buzzerTime)
+    {
+        _currentBuzzerTime = buzzerTime;
+        if (buzzerTime > 0)
+            _buzzerTimeBeforeMute = buzzerTime;
+
+        _buzzerUiMuted = buzzerTime == DeviceConstants.BuzzerMuted;
+        RefreshMuteButtonImage(hovering: false);
+        UpdateMuteButtonTooltip();
+    }
+
+    private void ResetBuzzerUi()
+    {
+        _currentBuzzerTime = null;
+        _buzzerTimeBeforeMute = null;
+        _buzzerUiMuted = false;
+        RefreshMuteButtonImage(hovering: false);
+        UpdateMuteButtonTooltip();
+    }
+
+    private void BtnMuteBuzzer_MouseEnter(object? sender, EventArgs e)
+    {
+        if (btnMuteBuzzer.Enabled)
+            RefreshMuteButtonImage(hovering: true);
+    }
+
+    private void BtnMuteBuzzer_MouseLeave(object? sender, EventArgs e) =>
+        RefreshMuteButtonImage(hovering: false);
+
+    private void BtnMuteBuzzer_EnabledChanged(object? sender, EventArgs e)
+    {
+        RefreshMuteButtonImage(hovering: false);
+        UpdateMuteButtonTooltip();
+    }
+
+    private void RefreshMuteButtonImage(bool hovering)
+    {
+        Color color;
+        Color back;
+        if (!btnMuteBuzzer.Enabled)
+        {
+            color = UiColors.TextMuted;
+            back = UiColors.FieldFill;
+        }
+        else if (hovering)
+        {
+            color = UiColors.IconHover;
+            back = Color.FromArgb(236, 239, 241);
+        }
+        else
+        {
+            // Match Settings gear idle tone.
+            color = Color.FromArgb(84, 110, 122);
+            back = UiColors.FieldFill;
+        }
+
+        var img = UiGlyphs.CreateSpeakerImage(18, color, _buzzerUiMuted, back);
+        var old = btnMuteBuzzer.Image;
+        btnMuteBuzzer.Image = img;
+        if (old is not null && !ReferenceEquals(old, img))
+            old.Dispose();
+    }
+
+    private void UpdateMuteButtonTooltip()
+    {
+        if (!btnMuteBuzzer.Enabled || _currentBuzzerTime is null)
+        {
+            tipMuteBuzzer.SetToolTip(btnMuteBuzzer, "Kết nối Reader để thay đổi âm thanh");
+            return;
+        }
+
+        tipMuteBuzzer.SetToolTip(
+            btnMuteBuzzer,
+            _buzzerUiMuted ? "Bật tiếng Reader" : "Tắt tiếng Reader");
     }
 
     private void ApplyOutInterfaceSelection(byte raw)
@@ -1463,6 +1630,9 @@ public sealed partial class MainForm : Form
         cboRfPower.Enabled = deviceControlsEnabled;
         btnGetRfPower.Enabled = deviceControlsEnabled;
         btnSetRfPower.Enabled = deviceControlsEnabled;
+        btnMuteBuzzer.Enabled = deviceControlsEnabled && _currentBuzzerTime is not null;
+        if (!connected && _currentBuzzerTime is not null)
+            ResetBuzzerUi();
         txtCurrent.ReadOnly = true;
         txtCurrent.Enabled = true;
         ApplyBatchUiState();

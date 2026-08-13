@@ -22,6 +22,8 @@ partial class MainForm
     private ComboBox cboReader = null!;
     private Label lblReaderStatus = null!;
     private Control lblConnection = null!;
+    private Button btnMuteBuzzer = null!;
+    private ToolTip tipMuteBuzzer = null!;
     private Control lblOutInterface = null!;
     private ComboBox cboOutInterface = null!;
     private Button btnGetOutInterface = null!;
@@ -321,8 +323,30 @@ partial class MainForm
         leftLayout.Controls.Add(readerRow, 1, 1);
 
         lblConnection = CreateFieldLabel(UiGlyphs.Connect, "Connection");
+        btnMuteBuzzer = CreateMuteToggleButton();
+        tipMuteBuzzer = new ToolTip(components);
+        tipMuteBuzzer.SetToolTip(btnMuteBuzzer, "Kết nối Reader để thay đổi âm thanh");
+        btnMuteBuzzer.Click += BtnMuteBuzzer_Click;
+        btnMuteBuzzer.MouseEnter += BtnMuteBuzzer_MouseEnter;
+        btnMuteBuzzer.MouseLeave += BtnMuteBuzzer_MouseLeave;
+        btnMuteBuzzer.EnabledChanged += BtnMuteBuzzer_EnabledChanged;
+        var connectionRow = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = new Padding(6, 4, 0, 4),
+        };
+        // Mute column ≈ Get spacing: left gap 6 + button ~42.
+        connectionRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f));
+        connectionRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 48));
+        btnConnect.Dock = DockStyle.Fill;
+        btnConnect.Margin = new Padding(0);
+        btnMuteBuzzer.Margin = new Padding(6, 0, 0, 0);
+        connectionRow.Controls.Add(btnConnect, 0, 0);
+        connectionRow.Controls.Add(btnMuteBuzzer, 1, 0);
         leftLayout.Controls.Add(lblConnection, 0, 2);
-        leftLayout.Controls.Add(WrapInput(btnConnect), 1, 2);
+        leftLayout.Controls.Add(connectionRow, 1, 2);
 
         lblOutInterface = CreateFieldLabel(UiGlyphs.Reader, "Out Interface");
         var outInterfaceRow = CreateGetSetRow(out var outCombo, out var outGet, out var outSet);
@@ -760,6 +784,37 @@ partial class MainForm
         if (img is not null)
             btn.Image = img;
 
+        return btn;
+    }
+
+    /// <summary>Icon-only mute toggle — sized/spaced like Get, vector speaker via <see cref="UiGlyphs.CreateSpeakerImage"/>.</summary>
+    private static Button CreateMuteToggleButton()
+    {
+        var btn = new Button
+        {
+            Text = string.Empty,
+            Dock = DockStyle.Fill,
+            MinimumSize = new Size(42, 34),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = UiColors.FieldFill,
+            ForeColor = UiColors.TextPrimary,
+            Cursor = Cursors.Hand,
+            Enabled = false,
+            TabStop = false,
+            UseVisualStyleBackColor = false,
+            ImageAlign = ContentAlignment.MiddleCenter,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Padding = new Padding(0),
+        };
+        btn.FlatAppearance.BorderColor = UiColors.Border;
+        btn.FlatAppearance.BorderSize = 1;
+        btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(236, 239, 241);
+        btn.FlatAppearance.MouseDownBackColor = Color.FromArgb(228, 232, 235);
+        btn.Image = UiGlyphs.CreateSpeakerImage(
+            18,
+            UiColors.TextMuted,
+            muted: false,
+            backColor: UiColors.FieldFill);
         return btn;
     }
 }

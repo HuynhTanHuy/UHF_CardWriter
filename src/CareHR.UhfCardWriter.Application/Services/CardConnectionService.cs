@@ -283,4 +283,47 @@ public sealed class CardConnectionService
             return CardValidation.MapDeviceException<byte>(ex);
         }
     }
+
+    /// <summary>
+    /// Sets only <c>DevicePara.BUZZERTIME</c>: Get → modify BuzzerTime → SetDevicePara → Get verify.
+    /// Success only when verified Actual equals Requested. Other DevicePara fields are preserved.
+    /// </summary>
+    public DeviceResult<byte> SetBuzzerTime(byte buzzerTime)
+    {
+        try
+        {
+            if (!_connection.IsOpen)
+                return DeviceResult<byte>.Fail(DeviceErrorCode.ReaderNotConnected, "Reader must be connected before this operation.");
+
+            var get = _connection.GetDevicePara();
+            if (!get.Success || get.Value is null)
+                return DeviceResult<byte>.Fail(get.ErrorCode, get.Message, get.VendorStatusCode);
+
+            var para = get.Value;
+            para.BuzzerTime = buzzerTime;
+
+            var set = _connection.SetDevicePara(para);
+            if (!set.Success)
+                return DeviceResult<byte>.Fail(set.ErrorCode, set.Message, set.VendorStatusCode);
+
+            var verify = _connection.GetDevicePara();
+            if (!verify.Success || verify.Value is null)
+                return DeviceResult<byte>.Fail(verify.ErrorCode, verify.Message, verify.VendorStatusCode);
+
+            var actual = verify.Value.BuzzerTime;
+            if (actual != buzzerTime)
+            {
+                return DeviceResult<byte>.Fail(
+                    DeviceErrorCode.InvalidParameter,
+                    $"BuzzerTime verify mismatch. Requested={buzzerTime} Actual={actual}",
+                    verify.VendorStatusCode);
+            }
+
+            return DeviceResult<byte>.Ok(actual, verify.Message, verify.VendorStatusCode);
+        }
+        catch (DeviceException ex)
+        {
+            return CardValidation.MapDeviceException<byte>(ex);
+        }
+    }
 }
